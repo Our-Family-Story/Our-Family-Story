@@ -6,47 +6,96 @@
 <title>현이네 가족 스케줄</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+
+<script>
+/* =====================================================================
+   ✏️  여기만 수정하세요  ✏️
+   - 쉼표(,)와 큰따옴표("")를 빠뜨리지 마세요.
+   - 저장(Commit)하면 1~2분 뒤 홈페이지에 반영됩니다.
+   ===================================================================== */
+
+const FAMILY = "현이네";
+
+// 가족 구성원 (색상은 바꿔도 됩니다)
+const MEMBERS = [
+  { name: "서현", grade: "고등학생", color: "#E0664F" },
+  { name: "세현", grade: "중학생",   color: "#3C78B4" },
+  { name: "준현", grade: "초등학생", color: "#2A9A7E" },
+  { name: "가족", grade: "",         color: "#8A6BBE" },
+];
+
+// 📅 가족 중요 행사 (달력에 표시)
+//    date: "년-월-일", time은 없으면 빼도 됩니다(종일)
+const EVENTS = [
+  { date: "2026-11-07", time: "18:00", who: "가족", title: "(예시) 가족 외식" },
+  { date: "2026-11-12",                who: "준현", title: "(예시) 현장체험학습" },
+  { date: "2026-11-17",                who: "세현", title: "(예시) 영어 말하기 대회" },
+  { date: "2026-11-21", time: "11:00", who: "가족", title: "(예시) 할머니댁 방문" },
+  { date: "2026-11-25", time: "16:00", who: "서현", title: "(예시) 학부모 상담" },
+  { date: "2026-12-24",                who: "가족", title: "(예시) 크리스마스 이브 가족여행" },
+];
+
+// 🚗 주간 픽업 스케줄 (매주 반복, 월~토)
+const PICKUPS = [
+  { day: "월", time: "13:50", who: "준현", place: "초등학교 정문" },
+  { day: "월", time: "21:00", who: "세현", place: "학원" },
+  { day: "화", time: "14:40", who: "준현", place: "초등학교 정문" },
+  { day: "화", time: "22:00", who: "서현", place: "고등학교 (야자 후)" },
+  { day: "수", time: "13:50", who: "준현", place: "초등학교 정문" },
+  { day: "수", time: "21:00", who: "세현", place: "학원" },
+  { day: "목", time: "14:40", who: "준현", place: "초등학교 정문" },
+  { day: "목", time: "22:00", who: "서현", place: "고등학교 (야자 후)" },
+  { day: "금", time: "13:50", who: "준현", place: "초등학교 정문" },
+  { day: "토", time: "13:00", who: "세현", place: "(예시) 수학 학원" },
+  { day: "토", time: "18:00", who: "서현", place: "(예시) 독서실" },
+];
+
+// 픽업이 없는 날 (방학, 재량휴업일 등)
+const NO_PICKUP_DAYS = [
+  // "2026-12-25",
+];
+
+// 가족 메모
+const NOTES = [
+  "픽업 시간은 아직 예시입니다. 실제 시간으로 바꿔주세요.",
+];
+
+/* ===================== 여기 아래는 수정하지 않아도 됩니다 ===================== */
+</script>
+
 <style>
-/* Layout: 가족 냉장고 달력 — today strip, month calendar + selected-day panel, then the weekly pickup table on its own. */
+/* Layout: 냉장고 달력 — family-events month calendar on top; below, a live pickup strip and a Mon–Sat time-axis timetable. */
 :root{
   --paper:#F4F6F1; --card:#FFFFFF; --ink:#1D3127; --muted:#5D6E63; --line:#D8DFD5; --soft:#ECF0E8;
   --pick:#F2B705; --pick-ink:#3A2C00; --pick-soft:#FFF4CC; --sun:#C2452F; --sat:#2F68A8;
+  --live:#D6402B; --ok:#2E8B57;
   --display:"Gaegu","IBM Plex Sans KR",cursive;
   --body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --hour:58px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root{
   --paper:#121A15; --card:#1A251F; --ink:#E5EEE8; --muted:#9CAFA2; --line:#2B3930; --soft:#202D26;
-  --pick:#F5C334; --pick-ink:#2A2000; --pick-soft:#3A3212; --sun:#EE8571; --sat:#7DB0E8; color-scheme:dark}}
+  --pick:#F5C334; --pick-ink:#2A2000; --pick-soft:#3A3212; --sun:#EE8571; --sat:#7DB0E8;
+  --live:#F07462; --ok:#5CC08A; color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
 .wrap{max-width:1180px;margin:0 auto;padding-block:26px 56px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:34px}
-  .wrap>*{min-width:0}
-h1,h2{font-family:var(--display);font-weight:700;margin:0;line-height:1.15;text-wrap:balance}
-h1{font-size:clamp(36px,6.5vw,56px)} h2{font-size:28px}
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:38px}
+.wrap>*{min-width:0}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(36px,6.5vw,56px)} h2{font-size:30px} h3{font-size:24px}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:3px solid var(--pick);outline-offset:2px;border-radius:6px}
 .muted{color:var(--muted)} .num{font-variant-numeric:tabular-nums}
+.row-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 14px;margin-bottom:12px}
 
 header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:14px 24px;border-bottom:2px dashed var(--line);padding-bottom:20px}
 .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:600}
-.filters{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
-.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--mc)}
-.chip[aria-pressed="false"]{opacity:.45}
-.chip.pick[aria-pressed="true"]{background:var(--pick);border-color:var(--pick);color:var(--pick-ink)}
-
-/* today */
-.today{display:grid;gap:12px}
-.row-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 14px}
-.today-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
-.tcard{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--mc);border-radius:12px;padding:12px 14px;display:grid;gap:3px}
-.tcard .t{font-size:22px;font-weight:600;line-height:1.1}
-.tcard.is-pick{background:var(--pick-soft);border-color:var(--pick);border-left-color:var(--pick)}
-.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;padding:1px 7px;border-radius:999px;background:var(--pick);color:var(--pick-ink);vertical-align:2px}
-.who{font-weight:600;color:var(--mc)}
-.empty{color:var(--muted);padding:10px 0}
+.legend{display:flex;flex-wrap:wrap;gap:10px 14px;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.legend small{font-weight:400;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--mc);display:inline-block}
 
 /* calendar */
 .cal-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
@@ -58,45 +107,87 @@ header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between
 .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .dow{font-size:12px;font-weight:600;text-align:center;color:var(--muted);padding:4px 0}
 .dow.sun{color:var(--sun)} .dow.sat{color:var(--sat)}
-.cell{border:0;background:var(--soft);border-radius:9px;min-height:104px;padding:6px;text-align:left;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}
+.cell{border:0;background:var(--soft);border-radius:9px;min-height:92px;padding:6px;text-align:left;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}
 .cell.out{background:transparent;opacity:.4}
 .cell .d{font-size:13px;font-weight:600}
 .cell.sun .d{color:var(--sun)} .cell.sat .d{color:var(--sat)}
 .cell.today .d{background:var(--ink);color:var(--paper);border-radius:999px;padding:0 7px;align-self:flex-start}
 .cell.sel{outline:2px solid var(--ink);outline-offset:-2px}
-.ev{font-size:11.5px;line-height:1.3;padding:1px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--mc);background:var(--card)}
-.ev.pick{background:var(--pick);color:var(--pick-ink);border-left-color:var(--mc)}
-.more{font-size:11px;color:var(--muted);padding-left:4px}
-.dots{display:none;gap:3px;flex-wrap:wrap}
-.dots i{width:6px;height:6px;border-radius:50%;background:var(--mc)}
-.dots i.pick{outline:2px solid var(--pick);outline-offset:1px}
+.cell.has{background:color-mix(in srgb,var(--soft) 70%,var(--card))}
+.ev{font-size:12px;line-height:1.3;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--mc);color:#fff;font-weight:500}
+.dots{display:none;gap:3px;justify-content:center}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--mc)}
 
-.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px;position:sticky;top:12px}
-.panel h3{margin:0;font-family:var(--display);font-size:26px}
+.panel{display:grid;gap:14px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px}
 .plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.plist li{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:8px 10px;border-radius:10px;background:var(--soft);border-left:4px solid var(--mc)}
-.plist li.pick{background:var(--pick-soft);border-left-color:var(--pick)}
-.plist .tm{font-weight:600}
-.plist .sub{font-size:12.5px;color:var(--muted)}
+.plist li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline;padding:8px 10px;border-radius:10px;background:var(--soft);border-left:4px solid var(--mc)}
+.plist .tm{font-weight:600;font-size:13px}
+.dday{font-weight:600;font-size:13px;color:var(--mc);min-width:42px}
+.who{font-weight:600;color:var(--mc)}
 
-@media (max-width:900px){.cal-wrap{grid-template-columns:1fr}.panel{position:static}}
+@media (max-width:900px){.cal-wrap{grid-template-columns:1fr}}
 @media (max-width:620px){
-  .cell{min-height:58px;padding:5px;align-items:center}
-  .ev,.more{display:none} .dots{display:flex;justify-content:center}
+  .cell{min-height:56px;align-items:center}
+  .ev{display:none}.dots{display:flex}
   .cal{padding:10px}
 }
 
-/* pickup table */
-.ptable-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:16px}
-table{border-collapse:collapse;width:100%;min-width:620px}
-th,td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
-thead th{font-size:13px;color:var(--muted);font-weight:600;background:var(--soft)}
-tbody th{font-weight:600;white-space:nowrap}
-td .pp{display:block;padding:6px 8px;border-radius:8px;background:var(--pick-soft);border-left:4px solid var(--mc);margin-bottom:6px}
-td .pp b{font-variant-numeric:tabular-nums}
-td .pp span{display:block;font-size:12.5px;color:var(--muted)}
-td.is-today{background:color-mix(in srgb,var(--pick) 12%,transparent)}
+/* live pickup */
+.pick-sec{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;gap:18px}
+.pick-sec>*,.live>*{min-width:0}
+.live{display:grid;gap:12px}
+.live-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.clock{font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--live);display:inline-block}
+@media (prefers-reduced-motion:no-preference){.pulse{animation:pulse 1.6s infinite}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--live) 60%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
+.next{font-size:15px}
+.next b{font-variant-numeric:tabular-nums}
+.live-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.lcard{border:1px solid var(--line);border-left:5px solid var(--mc);border-radius:12px;padding:12px 14px;display:grid;gap:4px;background:var(--paper)}
+.lcard .t{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.st{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;font-family:var(--body)}
+.st.wait{background:var(--soft);color:var(--muted)}
+.st.soon{background:var(--pick);color:var(--pick-ink)}
+.st.now{background:var(--live);color:#fff}
+.st.done{background:transparent;color:var(--ok);border:1.5px solid var(--ok)}
+.lcard.is-soon{background:var(--pick-soft);border-color:var(--pick);border-left-color:var(--mc)}
+.lcard.is-now{border-color:var(--live);border-left-color:var(--live)}
+.lcard.is-done{opacity:.6}
+.lcard.is-done .t span.ltime{text-decoration:line-through}
+.chk{justify-self:start;margin-top:4px;border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:3px 12px;font-size:13px;font-weight:600}
+.lcard.is-done .chk{border-color:var(--ok);color:var(--ok)}
+.empty{color:var(--muted);padding:6px 0}
 
+/* time-axis timetable */
+.tt-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+.tt{min-width:600px;display:grid;grid-template-columns:56px repeat(6,minmax(0,1fr))}
+.tt-h{position:sticky;top:0;background:var(--soft);padding:8px 6px;text-align:center;font-weight:600;font-size:14px;border-bottom:1px solid var(--line)}
+.tt-h.today{background:var(--ink);color:var(--paper)}
+.tt-h.sat{color:var(--sat)} .tt-h.today.sat{color:var(--paper)}
+.tt-h small{display:block;font-weight:400;font-size:11.5px;opacity:.8}
+.axis{position:relative;border-right:1px solid var(--line)}
+.axis span{position:absolute;right:8px;transform:translateY(-50%);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.col{position:relative;border-left:1px solid var(--line);
+  background-image:repeating-linear-gradient(to bottom,var(--line) 0 1px,transparent 1px var(--hour));background-position:0 12px;}
+.col.today{background-color:color-mix(in srgb,var(--pick) 9%,transparent)}
+.blk{position:absolute;left:4px;right:4px;border-radius:7px;padding:3px 7px;background:var(--mc);color:#fff;font-size:12px;line-height:1.25;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.blk b{font-variant-numeric:tabular-nums;font-size:12.5px}
+.blk span{opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk.done{opacity:.45}
+.nowline{position:absolute;left:0;right:0;height:2px;background:var(--live);z-index:3}
+.nowline::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--live)}
+.nowlabel{position:absolute;right:4px;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--live);font-variant-numeric:tabular-nums;z-index:3;background:var(--card);padding:0 2px}
+
+@media (max-width:620px){
+  .tt{min-width:0;grid-template-columns:42px repeat(6,minmax(0,1fr))}
+  .axis span{right:4px;font-size:10.5px}
+  .tt-h{font-size:13px;padding:6px 2px}
+  .blk{left:2px;right:2px;padding:2px 4px;font-size:11px}
+  .blk b{font-size:11px;white-space:normal}
+  .blk span{display:none}
+}
 .notes ul{list-style:none;padding:0;margin:10px 0 0}
 .notes li{padding:9px 0;border-bottom:1px solid var(--line)}
 footer{font-size:13px;color:var(--muted)}
@@ -110,17 +201,11 @@ footer{font-size:13px;color:var(--muted)}
       <h1 id="title">현이네 가족 스케줄</h1>
       <div class="muted num" id="todayLabel"></div>
     </div>
-    <div class="filters" id="filters" aria-label="보기 필터"></div>
+    <div class="legend" id="legend"></div>
   </header>
 
-  <section class="today" aria-labelledby="todayTitle">
-    <div class="row-head"><h2 id="todayTitle">오늘 일정</h2><span class="muted" id="todaySub"></span></div>
-    <div class="today-list" id="todayList"><div class="empty">불러오는 중…</div></div>
-  </section>
-
   <section aria-labelledby="calTitle">
-    <div class="row-head" style="margin-bottom:12px"><h2 id="calTitle">전체 일정 달력</h2>
-      <span class="muted" style="font-size:13px"><span class="badge">픽업</span> 노란색이 픽업 일정이에요</span></div>
+    <div class="row-head"><h2 id="calTitle">가족 행사 달력</h2><span class="muted" style="font-size:13px">날짜를 누르면 자세히 보여요</span></div>
     <div class="cal-wrap">
       <div class="cal">
         <div class="cal-nav">
@@ -134,132 +219,181 @@ footer{font-size:13px;color:var(--muted)}
         <div class="grid" id="dows"></div>
         <div class="grid" id="grid" style="margin-top:4px"></div>
       </div>
-      <aside class="panel" aria-live="polite">
-        <h3 id="selTitle"></h3>
-        <ul class="plist" id="selList"></ul>
-      </aside>
+      <div class="panel">
+        <div class="box" aria-live="polite"><h3 id="selTitle"></h3><ul class="plist" id="selList"></ul></div>
+        <div class="box"><h3>다가오는 행사</h3><ul class="plist" id="upcoming"></ul></div>
+      </div>
     </div>
   </section>
 
   <section aria-labelledby="pickTitle">
-    <div class="row-head" style="margin-bottom:12px"><h2 id="pickTitle">주간 픽업 스케줄</h2><span class="muted" style="font-size:13px">매주 반복</span></div>
-    <div class="ptable-wrap"><table id="ptable"></table></div>
+    <div class="row-head"><h2 id="pickTitle">픽업</h2><span class="muted" style="font-size:13px">매주 반복 · 월~토</span></div>
+    <div class="pick-sec">
+      <div class="live">
+        <div class="live-head">
+          <span class="pulse" aria-hidden="true"></span>
+          <h3>실시간 픽업 현황</h3>
+          <span class="clock" id="clock"></span>
+        </div>
+        <div class="next" id="nextLine"></div>
+        <div class="live-list" id="liveList"></div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:10px">주간 픽업 스케줄</h3>
+        <div class="tt-scroll"><div class="tt" id="tt"></div></div>
+      </div>
+    </div>
   </section>
 
   <section class="notes"><h2>가족 메모</h2><ul id="notes"></ul></section>
 
-  <footer>일정은 GitHub 저장소의 schedule.json을 고치면 1~2분 안에 반영됩니다.</footer>
+  <footer>내용은 index.html 맨 위 "여기만 수정하세요" 부분을 고치면 됩니다. "픽업 완료" 표시는 각 휴대폰에만 저장돼요.</footer>
 </div>
 
 <script>
-const DOW=["일","월","화","수","목","금","토"];
+const DOW=["일","월","화","수","목","금","토"], PDAYS=["월","화","수","목","금","토"];
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,"0");
 const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mins=t=>{const [h,m]=String(t).split(":").map(Number);return h*60+(m||0)};
+const mem=n=>MEMBERS.find(m=>m.name===n)||{name:n,color:"#888",grade:""};
+const byTime=(a,b)=>mins(a.time||"0:00")-mins(b.time||"0:00");
+
 const today=new Date(); today.setHours(0,0,0,0);
 const todayISO=iso(today);
+let view=new Date(today.getFullYear(),today.getMonth(),1), selected=todayISO;
+
+$("title").textContent=FAMILY+" 가족 스케줄"; document.title=FAMILY+" 가족 스케줄";
 $("todayLabel").textContent=`${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 ${DOW[today.getDay()]}요일`;
+$("legend").innerHTML=MEMBERS.map(m=>`<span style="--mc:${esc(m.color)}"><i class="dot"></i>${esc(m.name)}${m.grade?` <small>${esc(m.grade)}</small>`:""}</span>`).join("");
+$("notes").innerHTML=NOTES.map(n=>`<li>${esc(n)}</li>`).join("")||'<li class="muted">메모 없음</li>';
 
-let data, view=new Date(today.getFullYear(),today.getMonth(),1), selected=todayISO;
-let hidden=new Set(), pickOnly=false;
-
-function mem(name){return data.members.find(m=>m.name===name)||{name,short:name,color:"#888"}}
-
-// All items on a given date (weekly repeats + dated events), filtered
-function itemsOn(d){
-  const key=iso(d), dw=DOW[d.getDay()], skip=new Set(data.skip||[]);
-  const w=skip.has(key)?[]:(data.weekly||[]).filter(x=>x.day===dw&&(!x.from||key>=x.from)&&(!x.to||key<=x.to));
-  const e=(data.events||[]).filter(x=>x.date===key);
-  return [...w,...e]
-    .filter(x=>!hidden.has(x.who)&&(!pickOnly||x.pickup))
-    .sort((a,b)=>(a.time||"00:00").localeCompare(b.time||"00:00"));
-}
-
-function renderFilters(){
-  $("filters").innerHTML=data.members.map(m=>
-    `<button class="chip" style="--mc:${esc(m.color)}" data-who="${esc(m.name)}" aria-pressed="${!hidden.has(m.name)}"><i class="dot"></i>${esc(m.short)}${m.grade?` <span class="muted" style="font-weight:400">${esc(m.grade)}</span>`:""}</button>`).join("")
-    +`<button class="chip pick" id="pickOnly" aria-pressed="${pickOnly}">픽업만 보기</button>`;
-}
-
-function itemLine(x){return `${esc(mem(x.who).short)} ${esc(x.title.replace("(예시) ",""))}`}
-
-function renderToday(){
-  const list=itemsOn(today);
-  $("todayTitle").textContent="오늘 일정";
-  const p=list.filter(x=>x.pickup).length;
-  $("todaySub").textContent=list.length?`${list.length}건 · 픽업 ${p}건`:"";
-  $("todayList").innerHTML=list.length?list.map(x=>{const m=mem(x.who);return `
-    <article class="tcard${x.pickup?" is-pick":""}" style="--mc:${esc(m.color)}">
-      <div class="t num">${esc(x.time||"종일")} ${x.pickup?'<span class="badge">픽업</span>':""}</div>
-      <div><span class="who">${esc(m.short)}</span> · ${esc(x.title)}</div>
-      ${x.place?`<div class="muted" style="font-size:13px">${esc(x.place)}</div>`:""}
-    </article>`}).join(""):`<div class="empty">오늘은 등록된 일정이 없어요.</div>`;
-}
+/* ---------- calendar (family events only) ---------- */
+const eventsOn=key=>EVENTS.filter(e=>e.date===key).sort(byTime);
+function parseISO(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
 
 function renderCalendar(){
   $("monthLabel").textContent=`${view.getFullYear()}년 ${view.getMonth()+1}월`;
   $("dows").innerHTML=DOW.map((d,i)=>`<div class="dow${i===0?" sun":i===6?" sat":""}">${d}</div>`).join("");
   const start=new Date(view); start.setDate(1-view.getDay());
-  const cells=[];
+  let html="";
   for(let i=0;i<42;i++){
     const d=new Date(start); d.setDate(start.getDate()+i);
     if(i===35&&d.getMonth()!==view.getMonth()) break;
-    const key=iso(d), items=itemsOn(d), out=d.getMonth()!==view.getMonth();
-    const cls=["cell",out&&"out",d.getDay()===0&&"sun",d.getDay()===6&&"sat",key===todayISO&&"today",key===selected&&"sel"].filter(Boolean).join(" ");
-    const shown=items.slice(0,3);
-    cells.push(`<button class="${cls}" data-date="${key}" aria-label="${d.getMonth()+1}월 ${d.getDate()}일, 일정 ${items.length}건">
+    const key=iso(d), ev=eventsOn(key);
+    const cls=["cell",d.getMonth()!==view.getMonth()&&"out",d.getDay()===0&&"sun",d.getDay()===6&&"sat",key===todayISO&&"today",key===selected&&"sel",ev.length&&"has"].filter(Boolean).join(" ");
+    html+=`<button class="${cls}" data-date="${key}" aria-label="${d.getMonth()+1}월 ${d.getDate()}일${ev.length?`, 행사 ${ev.length}건`:""}">
       <span class="d num">${d.getDate()}</span>
-      ${shown.map(x=>`<span class="ev${x.pickup?" pick":""}" style="--mc:${esc(mem(x.who).color)}">${itemLine(x)}</span>`).join("")}
-      ${items.length>3?`<span class="more">+${items.length-3}건</span>`:""}
-      <span class="dots">${items.map(x=>`<i class="${x.pickup?"pick":""}" style="--mc:${esc(mem(x.who).color)}"></i>`).join("")}</span>
-    </button>`);
+      ${ev.map(e=>`<span class="ev" style="--mc:${esc(mem(e.who).color)}">${esc(e.title.replace("(예시) ",""))}</span>`).join("")}
+      <span class="dots">${ev.map(e=>`<i style="--mc:${esc(mem(e.who).color)}"></i>`).join("")}</span>
+    </button>`;
   }
-  $("grid").innerHTML=cells.join("");
-  renderSelected();
+  $("grid").innerHTML=html;
+  const sd=parseISO(selected), ev=eventsOn(selected);
+  $("selTitle").textContent=`${sd.getMonth()+1}월 ${sd.getDate()}일 ${DOW[sd.getDay()]}요일${selected===todayISO?" · 오늘":""}`;
+  $("selList").innerHTML=ev.length?ev.map(e=>`<li style="--mc:${esc(mem(e.who).color)}"><span class="tm num">${esc(e.time||"종일")}</span><span><span class="who">${esc(e.who)}</span> ${esc(e.title)}</span></li>`).join("")
+    :`<li style="grid-template-columns:1fr;background:transparent;border:0;padding:0" class="muted">등록된 행사가 없어요.</li>`;
+}
+function renderUpcoming(){
+  const up=EVENTS.filter(e=>e.date>=todayISO).sort((a,b)=>a.date.localeCompare(b.date)||byTime(a,b)).slice(0,5);
+  $("upcoming").innerHTML=up.length?up.map(e=>{const d=parseISO(e.date),n=Math.round((d-today)/864e5);
+    return `<li style="--mc:${esc(mem(e.who).color)}"><span class="dday num">${n===0?"D-DAY":"D-"+n}</span><span><span class="who">${esc(e.who)}</span> ${esc(e.title)}<br><span class="muted num" style="font-size:12.5px">${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]})${e.time?" "+esc(e.time):""}</span></span></li>`}).join("")
+    :`<li style="grid-template-columns:1fr;background:transparent;border:0;padding:0" class="muted">예정된 행사가 없어요.</li>`;
 }
 
-function renderSelected(){
-  const [y,m,dd]=selected.split("-").map(Number), d=new Date(y,m-1,dd);
-  $("selTitle").textContent=`${m}월 ${dd}일 ${DOW[d.getDay()]}요일${selected===todayISO?" · 오늘":""}`;
-  const items=itemsOn(d);
-  $("selList").innerHTML=items.length?items.map(x=>{const mm=mem(x.who);return `
-    <li class="${x.pickup?"pick":""}" style="--mc:${esc(mm.color)}">
-      <span class="tm num">${esc(x.time||"종일")}</span>
-      <span><span class="who">${esc(mm.short)}</span> ${esc(x.title)} ${x.pickup?'<span class="badge">픽업</span>':""}
-      ${x.place?`<span class="sub" style="display:block">${esc(x.place)}</span>`:""}</span>
-    </li>`}).join(""):`<li style="grid-template-columns:1fr;background:transparent;border:0" class="muted">일정이 없어요.</li>`;
+/* ---------- live pickup ---------- */
+function loadDone(){try{return JSON.parse(localStorage.getItem("pickupDone")||"{}")}catch(e){return {}}}
+function saveDone(v){try{localStorage.setItem("pickupDone",JSON.stringify(v))}catch(e){}}
+let done=loadDone();
+const noPick=new Set(NO_PICKUP_DAYS);
+const pickupsFor=d=>noPick.has(iso(d))?[]:PICKUPS.filter(p=>p.day===DOW[d.getDay()]).sort(byTime);
+const doneKey=p=>`${todayISO}|${p.time}|${p.who}`;
+
+function status(p,nowM){
+  if(done[doneKey(p)]) return ["done","완료"];
+  const t=mins(p.time), diff=t-nowM;
+  if(diff>30) return ["wait",`${fmtDur(diff)} 후`];
+  if(diff>0) return ["soon",`${diff}분 후 · 곧 출발`];
+  if(diff>-30) return ["now","픽업 시간"];
+  return ["done","시간 지남"];
+}
+function fmtDur(m){const h=Math.floor(m/60),r=m%60;return h?`${h}시간${r?" "+r+"분":""}`:`${r}분`}
+
+function nextPickup(now){
+  const nowM=now.getHours()*60+now.getMinutes();
+  for(let i=0;i<8;i++){
+    const d=new Date(today); d.setDate(today.getDate()+i);
+    const list=pickupsFor(d).filter(p=>i>0||(mins(p.time)>nowM&&!done[doneKey(p)]));
+    if(list.length) return {p:list[0],d,i};
+  }
+  return null;
 }
 
-function renderPickups(){
-  const days=["월","화","수","목","금","토"];
-  const used=days.filter(d=>(data.weekly||[]).some(x=>x.pickup&&x.day===d)||["월","화","수","목","금"].includes(d));
-  const kids=data.members.filter(m=>(data.weekly||[]).some(x=>x.pickup&&x.who===m.name));
+function renderLive(){
+  const now=new Date(), nowM=now.getHours()*60+now.getMinutes();
+  $("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const list=pickupsFor(today);
+  $("liveList").innerHTML=list.length?list.map(p=>{
+    const m=mem(p.who), [k,label]=status(p,nowM), isDone=!!done[doneKey(p)];
+    return `<article class="lcard is-${k}${isDone?" is-done":""}" style="--mc:${esc(m.color)}">
+      <div class="t"><span class="ltime">${esc(p.time)}</span><span class="st ${k}">${esc(label)}</span></div>
+      <div><span class="who">${esc(p.who)}</span> · ${esc(p.place)}</div>
+      <button class="chk" data-done="${esc(doneKey(p))}">${isDone?"✓ 픽업 완료":"픽업 완료 표시"}</button>
+    </article>`}).join(""):`<div class="empty">오늘은 픽업이 없어요.</div>`;
+  const n=nextPickup(now);
+  if(!n){$("nextLine").innerHTML='<span class="muted">예정된 픽업이 없어요.</span>';}
+  else{
+    const when=n.i===0?`오늘 <b>${esc(n.p.time)}</b> (${fmtDur(mins(n.p.time)-nowM)} 후)`
+      :`${n.i===1?"내일":`${n.d.getMonth()+1}/${n.d.getDate()}`} (${DOW[n.d.getDay()]}) <b>${esc(n.p.time)}</b>`;
+    $("nextLine").innerHTML=`다음 픽업 · <span class="who" style="--mc:${esc(mem(n.p.who).color)}">${esc(n.p.who)}</span> ${when} · ${esc(n.p.place)}`;
+  }
+  renderTimetable(now);
+}
+
+/* ---------- time-axis timetable ---------- */
+function renderTimetable(now){
+  const H=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour"))||58;
+  const all=PICKUPS.map(p=>mins(p.time));
+  const startH=Math.max(0,Math.floor(Math.min(...all)/60)-0), endH=Math.min(24,Math.ceil((Math.max(...all)+40)/60));
+  const PADT=12, hours=endH-startH, height=hours*H+PADT*2;
+  const top=m=>PADT+(m-startH*60)/60*H;
   const tdw=DOW[today.getDay()];
-  $("ptable").innerHTML=`<thead><tr><th></th>${used.map(d=>`<th>${d}</th>`).join("")}</tr></thead><tbody>`+
-    kids.map(k=>`<tr><th style="color:${esc(k.color)}">${esc(k.short)}<div class="muted" style="font-size:12px;font-weight:400">${esc(k.grade)}</div></th>${used.map(d=>{
-      const ps=data.weekly.filter(x=>x.pickup&&x.day===d&&x.who===k.name).sort((a,b)=>a.time.localeCompare(b.time));
-      return `<td class="${d===tdw?"is-today":""}">${ps.map(x=>`<div class="pp" style="--mc:${esc(k.color)}"><b>${esc(x.time)}</b><span>${esc(x.place||x.title)}</span></div>`).join("")||'<span class="muted">–</span>'}</td>`}).join("")}</tr>`).join("")+`</tbody>`;
+  // week dates (Mon of this week; Sunday shows next week)
+  const mon=new Date(today); mon.setDate(today.getDate()+(today.getDay()===0?1:1-today.getDay()));
+  let h=`<div class="tt-h" style="border-right:1px solid var(--line)"></div>`;
+  PDAYS.forEach((d,i)=>{const dt=new Date(mon);dt.setDate(mon.getDate()+i);
+    h+=`<div class="tt-h${d===tdw?" today":""}${d==="토"?" sat":""}">${d}<small class="num">${dt.getMonth()+1}/${dt.getDate()}</small></div>`});
+  let axis=`<div class="axis" style="height:${height}px">`;
+  for(let k=0;k<=hours;k++) axis+=`<span style="top:${PADT+k*H}px">${pad(startH+k)}:00</span>`;
+  axis+="</div>";
+  const nowM=now.getHours()*60+now.getMinutes();
+  let cols="";
+  PDAYS.forEach(d=>{
+    const isToday=d===tdw;
+    const items=PICKUPS.filter(p=>p.day===d).sort(byTime);
+    cols+=`<div class="col${isToday?" today":""}" style="height:${height}px">`+
+      items.map(p=>{const m=mem(p.who),dn=isToday&&done[doneKey(p)];
+        return `<div class="blk${dn?" done":""}" style="--mc:${esc(m.color)};top:${top(mins(p.time))+1}px;height:${Math.max(H*0.62,34)}px" title="${esc(p.time+" "+p.who+" "+p.place)}"><b>${esc(p.time)} ${esc(p.who)}</b><span>${esc(p.place)}</span></div>`}).join("")+
+      (isToday&&nowM>=startH*60&&nowM<=endH*60?`<div class="nowline" style="top:${top(nowM)}px"></div>`:"")+
+      `</div>`;
+  });
+  $("tt").innerHTML=h+axis+cols;
 }
 
-function renderAll(){renderFilters();renderToday();renderCalendar();renderPickups();
-  $("notes").innerHTML=(data.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")||'<li class="muted">메모 없음</li>';}
-
+/* ---------- events ---------- */
 document.addEventListener("click",e=>{
-  const c=e.target.closest("[data-date]"); if(c){selected=c.dataset.date;
-    const [y,m]=selected.split("-").map(Number); if(m-1!==view.getMonth()) view=new Date(y,m-1,1);
-    renderCalendar(); return;}
-  const w=e.target.closest("[data-who]"); if(w){const n=w.dataset.who; hidden.has(n)?hidden.delete(n):hidden.add(n); renderFilters();renderToday();renderCalendar(); return;}
-  if(e.target.closest("#pickOnly")){pickOnly=!pickOnly;renderFilters();renderToday();renderCalendar();}
+  const c=e.target.closest("[data-date]");
+  if(c){selected=c.dataset.date;const d=parseISO(selected);if(d.getMonth()!==view.getMonth()||d.getFullYear()!==view.getFullYear()) view=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();return;}
+  const b=e.target.closest("[data-done]");
+  if(b){const k=b.dataset.done; if(done[k]) delete done[k]; else done[k]=true; saveDone(done); renderLive();}
 });
 $("prev").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderCalendar()};
 $("next").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCalendar()};
 $("thisMonth").onclick=()=>{view=new Date(today.getFullYear(),today.getMonth(),1);selected=todayISO;renderCalendar()};
 
-fetch("schedule.json",{cache:"no-store"}).then(r=>r.json()).then(j=>{data=j;
-  if(j.familyName){$("title").textContent=j.familyName+" 가족 스케줄";document.title=j.familyName+" 가족 스케줄";}
-  renderAll();})
-  .catch(()=>{$("todayList").innerHTML='<div class="empty">schedule.json을 읽지 못했어요. 쉼표나 따옴표가 빠지지 않았는지 확인해주세요.</div>'});
+renderCalendar(); renderUpcoming(); renderLive();
+setInterval(()=>{ if(iso(new Date())!==todayISO) location.reload(); else renderLive(); },30000);
 </script>
 </body>
 </html>
