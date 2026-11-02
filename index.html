@@ -12,7 +12,7 @@
    ✏️  여기만 수정하세요  ✏️
    - 쉼표(,)와 큰따옴표("")를 빠뜨리지 마세요.
    - 저장(Commit)하면 1~2분 뒤 홈페이지에 반영됩니다.
-   - 월간 스케줄(EVENTS)은 홈페이지 달력에서 바로 추가·수정할 수도 있어요.
+   - 월간 스케줄은 홈페이지 달력에서 바로 추가·수정하세요.
    ===================================================================== */
 
 const FAMILY = "현이네";
@@ -25,7 +25,8 @@ const MEMBERS = [
   { name: "가족", grade: "",         color: "#8A6BBE" },
 ];
 
-// 📅 월간 스케줄 — date: "년-월-일", time은 없으면 빼도 됩니다(종일)
+// 📅 월간 스케줄 — 처음 시작할 때만 쓰이고, 이후에는 홈페이지 달력에서 추가·수정합니다.
+//    date: "년-월-일", time은 없으면 빼도 됩니다(종일)
 const EVENTS = [
   { date: "2026-11-07", time: "18:00", who: "가족", title: "(예시) 가족 외식" },
   { date: "2026-11-12", who: "준현", title: "(예시) 현장체험학습" },
@@ -299,7 +300,7 @@ footer{font-size:13px;color:var(--muted);display:grid;gap:6px}
   <section class="notes"><h2>가족 메모</h2><ul id="notes"></ul></section>
 
   <footer>
-    <div>픽업 시간과 메모는 index.html 맨 위 "여기만 수정하세요" 부분에서 고칩니다. "픽업 완료" 표시는 각 휴대폰에만 저장돼요.</div>
+    <div>픽업 시간과 메모는 index.html 맨 위 "여기만 수정하세요" 부분에서 고칩니다. 월간 스케줄과 "픽업 완료"는 가족 모두에게 바로 공유돼요.</div>
     <div class="conn-status" id="connStatus"></div>
   </footer>
 </div>
@@ -321,9 +322,7 @@ function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTime
 const today=new Date(); today.setHours(0,0,0,0);
 const todayISO=iso(today);
 let view=new Date(today.getFullYear(),today.getMonth(),1), selected=todayISO;
-let events=EVENTS.slice();
-// GitHub Pages can serve a cached page for a few minutes after a save; show this device's latest save meanwhile
-(()=>{const o=store.get("eventsOverride"); if(o&&Date.now()-o.savedAt<15*60*1000) events=o.events; else store.del("eventsOverride")})();
+let events=EVENTS.slice(), serverOK=false, needCode=false, loaded=false;
 
 $("title").textContent=FAMILY+" 가족 스케줄"; document.title=FAMILY+" 가족 스케줄";
 $("todayLabel").textContent=`${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 ${DOW[today.getDay()]}요일${HOLIDAYS[todayISO]?" · "+HOLIDAYS[todayISO]:""}`;
@@ -362,16 +361,17 @@ function renderDay(){
   h+=`<ul class="plist">${ev.length?ev.map((e,i)=>`<li style="--mc:${esc(mem(e.who).color)}">
       <span class="tm num">${esc(e.time||"종일")}</span>
       <span><span class="who">${esc(e.who)}</span> ${esc(e.title)}</span>
-      <button class="ebtn" data-edit="${i}">수정</button></li>`).join("")
+      ${serverOK?`<button class="ebtn" data-edit="${i}">수정</button>`:"<span></span>"}</li>`).join("")
     :`<li style="grid-template-columns:1fr;background:transparent;border:0;padding:0" class="muted">등록된 일정이 없어요.</li>`}</ul>`;
-  if(editing) h+=formHTML(); else h+=`<button class="btn add" id="addBtn">+ 이 날 일정 추가</button>`;
+  if(editing) h+=formHTML();
+  else if(serverOK) h+=`<button class="btn add" id="addBtn">+ 이 날 일정 추가</button>`;
+  else if(loaded) h+=`<span class="muted" style="font-size:13px">저장 서버에 연결되지 않아 지금은 보기만 할 수 있어요.</span>`;
   $("dayBox").innerHTML=h;
   if(editing) bindForm();
 }
 
 function formHTML(){
   const o=editing.mode==="edit"?editing.orig:{who:MEMBERS[0].name,time:"",title:""};
-  const conn=getConn();
   return `<form class="form" id="evForm">
     <strong>${editing.mode==="edit"?"일정 수정":"새 일정"}</strong>
     <div class="field"><label for="fTitle">내용</label><input id="fTitle" required maxlength="60" value="${esc(o.title)}" placeholder="예: 학교 축제"></div>
@@ -383,7 +383,7 @@ function formHTML(){
       <div class="field"><label for="fTime">시간</label><input id="fTime" type="time" value="${esc(o.time||"")}" ${o.time?"":"disabled"}></div>
       <label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="fAllDay" ${o.time?"":"checked"}> 종일</label>
     </div>
-    ${conn?"":connectHTML()}
+    ${needCode&&!store.get("familyCode")?`<div class="field"><label for="fCode">가족 비밀번호 (처음 한 번만)</label><input id="fCode" type="password" autocomplete="off"></div>`:""}
     <div class="msg" id="fMsg"></div>
     <div class="actions">
       ${editing.mode==="edit"?`<button type="button" class="btn danger" id="fDel">삭제</button>`:""}
@@ -403,7 +403,7 @@ function bindForm(){
   };
   $("evForm").onsubmit=async e=>{
     e.preventDefault();
-    if(!getConn()&&!readConnectForm()) return;
+    if($("fCode")){const c=$("fCode").value.trim();if(!c){msg("가족 비밀번호를 적어주세요.","err");return}store.set("familyCode",c)}
     const next={date:$("fDate").value,who:$("fWho").value,title:$("fTitle").value.trim()};
     if(!$("fAllDay").checked&&$("fTime").value) next.time=$("fTime").value;
     if(!next.title||!next.date){msg("내용과 날짜를 적어주세요.","err");return}
@@ -420,109 +420,66 @@ function renderUpcoming(){
     :`<li style="grid-template-columns:1fr;background:transparent;border:0;padding:0" class="muted">예정된 일정이 없어요.</li>`;
 }
 
-/* ================= GitHub 저장 ================= */
-// 저장소 위치는 주소(아이디.github.io/저장소)에서 자동으로 알아냅니다.
-function detectRepo(){
-  const h=location.hostname, m=h.match(/^([^.]+)\.github\.io$/i);
-  if(!m) return {owner:"",repo:""};
-  const seg=location.pathname.split("/").filter(Boolean)[0];
-  return {owner:m[1],repo:seg&&!seg.endsWith(".html")?seg:h};
+/* ================= 저장 (Cloudflare) ================= */
+const API="/api/state";
+let doneMap={};
+function applyState(d){
+  if(Array.isArray(d.events)) events=d.events;
+  doneMap=(d.done&&d.done[todayISO])||{};
 }
-function getConn(){const c=store.get("ghConn");return c&&c.token&&c.owner&&c.repo?c:null}
-function connectHTML(){
-  const d=detectRepo();
-  return `<div class="connect">
-    <strong>처음 한 번: 이 기기를 GitHub에 연결</strong>
-    <ol>
-      <li>GitHub → Settings → Developer settings → <b>Fine-grained tokens</b> → Generate new token</li>
-      <li>Repository access: <b>이 저장소만</b> 선택, Permissions → <b>Contents: Read and write</b></li>
-      <li>만들어진 토큰(github_pat_…)을 아래에 붙여넣기</li>
-    </ol>
-    <div class="row2">
-      <div class="field"><label for="cOwner">소유주</label><input id="cOwner" value="${esc(d.owner)}" placeholder="아이디 또는 조직"></div>
-      <div class="field"><label for="cRepo">저장소</label><input id="cRepo" value="${esc(d.repo)}" placeholder="family-home"></div>
-    </div>
-    <div class="field"><label for="cToken">토큰</label><input id="cToken" type="password" autocomplete="off" placeholder="github_pat_..."></div>
-    <span class="muted" style="font-size:12px">토큰은 이 기기에만 저장되고, 이 저장소의 index.html을 고치는 데만 씁니다.</span>
-  </div>`;
+async function sync(first){
+  try{
+    const r=await fetch(API,{cache:"no-store"}); if(!r.ok) throw 0;
+    const d=await r.json(); serverOK=true; needCode=!!d.needCode; applyState(d);
+  }catch(e){ if(first){serverOK=false; doneMap=store.get("pickupDone")||{};} }
+  loaded=true;
+  if(!editing) renderCalendar(); else renderUpcoming();
+  renderLive(); renderStatus();
 }
-function readConnectForm(){
-  const c={owner:$("cOwner").value.trim(),repo:$("cRepo").value.trim(),token:$("cToken").value.trim(),branch:"main"};
-  if(!c.owner||!c.repo||!c.token){msg("소유주, 저장소, 토큰을 모두 적어주세요.","err");return null}
-  store.set("ghConn",c); renderConn(); return c;
+function renderStatus(){
+  $("connStatus").innerHTML=serverOK?"✓ 저장 서버 연결됨 · 가족 모두에게 바로 반영돼요"
+    :"저장 서버에 연결되지 않았어요. Cloudflare 주소(…pages.dev)로 열었는지 확인해주세요.";
 }
-function renderConn(){
-  const c=getConn();
-  $("connStatus").innerHTML=c?`달력 저장: <b>${esc(c.owner)}/${esc(c.repo)}</b> 연결됨 <button class="linkbtn" id="disc">연결 해제</button>`
-    :`달력 저장: 이 기기는 아직 GitHub에 연결되지 않았어요 (일정 저장할 때 연결)`;
-  if($("disc")) $("disc").onclick=()=>{store.del("ghConn");renderConn();toast("이 기기의 GitHub 연결을 해제했어요.")};
-}
-
-const b64dec=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,"")),c=>c.charCodeAt(0)));
-function b64enc(str){const bytes=new TextEncoder().encode(str);let bin="";for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return btoa(bin)}
-const EV_RE=/const EVENTS = \[[\s\S]*?\n\];/;
-const same=(a,b)=>a.date===b.date&&(a.time||"")===(b.time||"")&&a.who===b.who&&a.title===b.title;
-function serialize(list){
-  const s=list.slice().sort((a,b)=>a.date.localeCompare(b.date)||byTime(a,b));
-  return "const EVENTS = [\n"+s.map(e=>`  { date: ${JSON.stringify(e.date)}, ${e.time?`time: ${JSON.stringify(e.time)}, `:""}who: ${JSON.stringify(e.who)}, title: ${JSON.stringify(e.title)} },`).join("\n")+"\n];";
-}
-
-async function gh(conn,method,body){
-  const url=`https://api.github.com/repos/${encodeURIComponent(conn.owner)}/${encodeURIComponent(conn.repo)}/contents/index.html`+(method==="GET"?`?ref=${encodeURIComponent(conn.branch||"main")}`:"");
-  const r=await fetch(url,{method,cache:"no-store",headers:{Authorization:`Bearer ${conn.token}`,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"},body:body?JSON.stringify(body):undefined});
-  if(!r.ok){const e=new Error("http");e.status=r.status;throw e}
-  return r.json();
+async function post(body){
+  const h={"content-type":"application/json"}; const c=store.get("familyCode"); if(c) h["x-family-code"]=c;
+  const r=await fetch(API,{method:"POST",headers:h,body:JSON.stringify(body)});
+  let d={}; try{d=await r.json()}catch(e){}
+  if(!r.ok){const e=new Error(d.error||"http");e.status=r.status;e.data=d;throw e}
+  return d;
 }
 
 async function commit(change){
-  const conn=getConn(); if(!conn) return;
   const save=$("fSave"); if(save){save.disabled=true;save.textContent="저장 중…"}
-  msg("GitHub에 저장하는 중…");
+  msg("저장하는 중…");
   try{
-    for(let attempt=0;attempt<2;attempt++){
-      const file=await gh(conn,"GET");
-      const src=b64dec(file.content);
-      const m=src.match(EV_RE);
-      if(!m) throw Object.assign(new Error("format"),{status:"format"});
-      const list=new Function("return "+m[0].replace(/^const EVENTS = /,"").replace(/;$/,""))();
-      if(change.type!=="add"){
-        const i=list.findIndex(e=>same(e,change.orig));
-        if(i<0) throw Object.assign(new Error("gone"),{status:"gone"});
-        if(change.type==="delete") list.splice(i,1); else list[i]=change.next;
-      } else list.push(change.next);
-      const out=src.replace(EV_RE,serialize(list));
-      const label=change.type==="add"?"추가":change.type==="delete"?"삭제":"수정";
-      const t=(change.next||change.orig);
-      try{
-        await gh(conn,"PUT",{message:`월간 스케줄 ${label}: ${t.date} ${t.title}`,content:b64enc(out),sha:file.sha,branch:conn.branch||"main"});
-        events=list; store.set("eventsOverride",{savedAt:Date.now(),events:list});
-        editing=null;
-        if(change.next&&change.next.date!==selected){selected=change.next.date;const d=parseISO(selected);view=new Date(d.getFullYear(),d.getMonth(),1)}
-        renderCalendar();
-        toast(`${label}했어요. 다른 기기에는 1~2분 뒤 보여요.`);
-        return;
-      }catch(e){ if(e.status===409&&attempt===0) continue; throw e; }
-    }
+    const d=await post({op:change.type,orig:change.orig,next:change.next,seed:EVENTS});
+    applyState(d); editing=null;
+    if(change.next&&change.next.date!==selected){selected=change.next.date;const dt=parseISO(selected);view=new Date(dt.getFullYear(),dt.getMonth(),1)}
+    renderCalendar();
+    toast(change.type==="add"?"추가했어요.":change.type==="delete"?"삭제했어요.":"수정했어요.");
   }catch(e){
     if(save){save.disabled=false;save.textContent="저장"}
-    const s=e.status;
-    if(s===401){store.del("ghConn");renderConn();msg("토큰이 맞지 않거나 만료됐어요. 새 토큰을 넣고 다시 저장해주세요.","err");editing&&renderDay();}
-    else if(s===403||s===404) msg("이 저장소에 쓸 권한이 없어요. 소유주·저장소 이름과 토큰 권한(Contents: Read and write)을 확인해주세요.","err");
-    else if(s==="gone") msg("다른 기기에서 이 일정이 이미 바뀌었어요. 새로고침한 뒤 다시 해주세요.","err");
-    else if(s==="format") msg("index.html의 EVENTS 부분 형식이 바뀌어 자동 저장을 할 수 없어요.","err");
+    if(e.status===401){store.del("familyCode");msg("가족 비밀번호가 맞지 않아요. 다시 적어주세요.","err");renderDay();msg("가족 비밀번호가 맞지 않아요. 다시 적어주세요.","err");}
+    else if(e.status===409){applyState(e.data);editing=null;renderCalendar();toast("다른 가족이 먼저 이 일정을 바꿨어요. 최신 내용으로 다시 확인해주세요.");}
     else msg("저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러주세요.","err");
   }
 }
+async function toggleDone(k){
+  const v=!doneMap[k]; doneMap={...doneMap}; if(v) doneMap[k]=true; else delete doneMap[k];
+  renderLive();
+  if(!serverOK){store.set("pickupDone",doneMap);return}
+  try{applyState(await post({op:"done",date:todayISO,key:k,value:v,seed:EVENTS}));renderLive()}
+  catch(e){ if(e.status===401){store.del("familyCode");toast("가족 비밀번호가 필요해요. 달력에서 일정을 한 번 저장하면서 입력해주세요.")} else toast("픽업 완료를 저장하지 못했어요."); sync(); }
+}
 
 /* ================= 실시간 픽업 ================= */
-let done=store.get("pickupDone")||{};
 const noPick=new Set(NO_PICKUP_DAYS);
 const offDay=d=>{const k=iso(d);return noPick.has(k)||(SKIP_PICKUP_ON_HOLIDAYS&&!!HOLIDAYS[k])};
 const pickupsFor=d=>offDay(d)?[]:PICKUPS.filter(p=>p.day===DOW[d.getDay()]).sort(byTime);
 const doneKey=p=>`${todayISO}|${p.time}|${p.who}`;
 function fmtDur(m){const h=Math.floor(m/60),r=m%60;return h?`${h}시간${r?" "+r+"분":""}`:`${r}분`}
 function status(p,nowM){
-  if(done[doneKey(p)]) return ["done","완료"];
+  if(doneMap[doneKey(p)]) return ["done","완료"];
   const diff=mins(p.time)-nowM;
   if(diff>30) return ["wait",`${fmtDur(diff)} 후`];
   if(diff>0) return ["soon",`${diff}분 후 · 곧 출발`];
@@ -533,7 +490,7 @@ function nextPickup(now){
   const nowM=now.getHours()*60+now.getMinutes();
   for(let i=0;i<14;i++){
     const d=new Date(today); d.setDate(today.getDate()+i);
-    const list=pickupsFor(d).filter(p=>i>0||(mins(p.time)>nowM&&!done[doneKey(p)]));
+    const list=pickupsFor(d).filter(p=>i>0||(mins(p.time)>nowM&&!doneMap[doneKey(p)]));
     if(list.length) return {p:list[0],d,i};
   }
   return null;
@@ -543,7 +500,7 @@ function renderLive(){
   $("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
   const list=pickupsFor(today), hol=HOLIDAYS[todayISO];
   $("liveList").innerHTML=list.length?list.map(p=>{
-    const m=mem(p.who), [k,label]=status(p,nowM), isDone=!!done[doneKey(p)];
+    const m=mem(p.who), [k,label]=status(p,nowM), isDone=!!doneMap[doneKey(p)];
     return `<article class="lcard is-${k}${isDone?" is-done":""}" style="--mc:${esc(m.color)}">
       <div class="t"><span class="ltime">${esc(p.time)}</span><span class="st ${k}">${esc(label)}</span></div>
       <div><span class="who">${esc(p.who)}</span> · ${esc(p.place)}</div>
@@ -580,7 +537,7 @@ function renderTimetable(now){
     const isToday=d===tdw, off=offDay(dates[i]);
     const items=PICKUPS.filter(p=>p.day===d).sort(byTime);
     cols+=`<div class="col${isToday?" today":""}${HOLIDAYS[iso(dates[i])]?" hol":""}" style="height:${height}px">`+
-      items.map(p=>{const m=mem(p.who),dn=isToday&&done[doneKey(p)];
+      items.map(p=>{const m=mem(p.who),dn=isToday&&doneMap[doneKey(p)];
         return `<div class="blk${dn?" done":""}${off?" off":""}" style="--mc:${esc(m.color)};top:${top(mins(p.time))+1}px;height:${Math.max(H*0.62,34)}px" title="${esc(p.time+" "+p.who+" "+p.place)}"><b>${esc(p.time)} ${esc(p.who)}</b><span>${esc(p.place)}</span></div>`}).join("")+
       (isToday&&nowM>=startH*60&&nowM<=endH*60?`<div class="nowline" style="top:${top(nowM)}px"></div>`:"")+
       `</div>`;
@@ -600,14 +557,14 @@ document.addEventListener("click",e=>{
   const ed=e.target.closest("[data-edit]");
   if(ed){editing={mode:"edit",orig:eventsOn(selected)[+ed.dataset.edit]};renderDay();return}
   const b=e.target.closest("[data-done]");
-  if(b){const k=b.dataset.done; if(done[k]) delete done[k]; else done[k]=true; store.set("pickupDone",done); renderLive();}
+  if(b){toggleDone(b.dataset.done);}
 });
 $("prev").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderCalendar()};
 $("next").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCalendar()};
 $("thisMonth").onclick=()=>{view=new Date(today.getFullYear(),today.getMonth(),1);selected=todayISO;editing=null;renderCalendar()};
 
-renderConn(); renderCalendar(); renderLive();
-setInterval(()=>{ if(iso(new Date())!==todayISO) location.reload(); else renderLive(); },30000);
+renderCalendar(); renderLive(); sync(true);
+setInterval(()=>{ if(iso(new Date())!==todayISO) location.reload(); else sync(); },30000);
 </script>
 </body>
 </html>
