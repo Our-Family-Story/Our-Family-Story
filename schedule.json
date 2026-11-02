@@ -1,22 +1,42 @@
 {
-  "familyName": "우리집",
-  "kids": [
-    { "name": "조서현", "grade": "고등학생", "color": "#E8735A" },
-    { "name": "조세현", "grade": "중학생", "color": "#3E7CB1" },
-    { "name": "조준현", "grade": "초등학생", "color": "#2F9C8F" }
+  "familyName": "현이네",
+  "members": [
+    { "name": "조서현", "short": "서현", "grade": "고등학생", "color": "#E0664F" },
+    { "name": "조세현", "short": "세현", "grade": "중학생", "color": "#3C78B4" },
+    { "name": "조준현", "short": "준현", "grade": "초등학생", "color": "#2A9A7E" },
+    { "name": "가족", "short": "가족", "grade": "", "color": "#8A6BBE" }
   ],
-  "pickups": [
-    { "day": "월", "time": "13:50", "kid": "조준현", "place": "초등학교 정문", "note": "시간 확인 필요" },
-    { "day": "월", "time": "21:00", "kid": "조세현", "place": "중학교 앞 학원", "note": "시간 확인 필요" },
-    { "day": "화", "time": "14:40", "kid": "조준현", "place": "초등학교 정문", "note": "시간 확인 필요" },
-    { "day": "화", "time": "22:00", "kid": "조서현", "place": "고등학교 (야간자습 후)", "note": "시간 확인 필요" },
-    { "day": "수", "time": "13:50", "kid": "조준현", "place": "초등학교 정문", "note": "시간 확인 필요" },
-    { "day": "수", "time": "21:00", "kid": "조세현", "place": "중학교 앞 학원", "note": "시간 확인 필요" },
-    { "day": "목", "time": "14:40", "kid": "조준현", "place": "초등학교 정문", "note": "시간 확인 필요" },
-    { "day": "목", "time": "22:00", "kid": "조서현", "place": "고등학교 (야간자습 후)", "note": "시간 확인 필요" },
-    { "day": "금", "time": "13:50", "kid": "조준현", "place": "초등학교 정문", "note": "시간 확인 필요" }
+
+  "weekly": [
+    { "day": "월", "time": "13:50", "who": "조준현", "title": "하교 픽업", "place": "초등학교 정문", "pickup": true },
+    { "day": "월", "time": "21:00", "who": "조세현", "title": "학원 픽업", "place": "중학교 앞 학원", "pickup": true },
+    { "day": "화", "time": "14:40", "who": "조준현", "title": "하교 픽업", "place": "초등학교 정문", "pickup": true },
+    { "day": "화", "time": "22:00", "who": "조서현", "title": "야간자습 후 픽업", "place": "고등학교", "pickup": true },
+    { "day": "수", "time": "13:50", "who": "조준현", "title": "하교 픽업", "place": "초등학교 정문", "pickup": true },
+    { "day": "수", "time": "21:00", "who": "조세현", "title": "학원 픽업", "place": "중학교 앞 학원", "pickup": true },
+    { "day": "목", "time": "14:40", "who": "조준현", "title": "하교 픽업", "place": "초등학교 정문", "pickup": true },
+    { "day": "목", "time": "22:00", "who": "조서현", "title": "야간자습 후 픽업", "place": "고등학교", "pickup": true },
+    { "day": "금", "time": "13:50", "who": "조준현", "title": "하교 픽업", "place": "초등학교 정문", "pickup": true },
+
+    { "day": "화", "time": "15:00", "who": "조준현", "title": "(예시) 태권도", "place": "" },
+    { "day": "목", "time": "15:00", "who": "조준현", "title": "(예시) 태권도", "place": "" },
+    { "day": "토", "time": "10:00", "who": "조세현", "title": "(예시) 수학 학원", "place": "" }
   ],
+
+  "events": [
+    { "date": "2026-11-07", "time": "18:00", "who": "가족", "title": "(예시) 가족 외식" },
+    { "date": "2026-11-12", "who": "조준현", "title": "(예시) 현장체험학습" },
+    { "date": "2026-11-12", "time": "15:30", "who": "조준현", "title": "(예시) 체험학습 귀교 픽업", "place": "초등학교 정문", "pickup": true },
+    { "date": "2026-11-17", "who": "조세현", "title": "(예시) 영어 말하기 대회" },
+    { "date": "2026-11-21", "time": "11:00", "who": "가족", "title": "(예시) 할머니댁 방문" },
+    { "date": "2026-11-25", "who": "조서현", "title": "(예시) 학부모 상담", "time": "16:00" }
+  ],
+
+  "skip": [
+  ],
+
   "notes": [
-    "스케줄은 schedule.json 파일을 고치면 바뀝니다."
+    "일정은 GitHub의 schedule.json에서 고치면 반영됩니다.",
+    "(예시)가 붙은 일정은 샘플이니 실제 일정으로 바꿔주세요."
   ]
 }
