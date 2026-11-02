@@ -1,5 +1,5 @@
 {
-  "name": "워커이름",
+  "name": "https://our-family-story.chogak1449.workers.dev",
   "main": "src/worker.js",
   "compatibility_date": "2025-06-01",
   "assets": {
@@ -9,7 +9,7 @@
   "kv_namespaces": [
     {
       "binding": "SCHEDULE",
-      "id": "KV아이디"
+      "id": "115a73bebed742a68c8d1149f9f4c00a"
     }
   ]
 }
