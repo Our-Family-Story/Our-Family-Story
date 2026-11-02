@@ -12,6 +12,7 @@
    ✏️  여기만 수정하세요  ✏️
    - 쉼표(,)와 큰따옴표("")를 빠뜨리지 마세요.
    - 저장(Commit)하면 1~2분 뒤 홈페이지에 반영됩니다.
+   - 월간 스케줄(EVENTS)은 홈페이지 달력에서 바로 추가·수정할 수도 있어요.
    ===================================================================== */
 
 const FAMILY = "현이네";
@@ -24,15 +25,14 @@ const MEMBERS = [
   { name: "가족", grade: "",         color: "#8A6BBE" },
 ];
 
-// 📅 가족 중요 행사 (달력에 표시)
-//    date: "년-월-일", time은 없으면 빼도 됩니다(종일)
+// 📅 월간 스케줄 — date: "년-월-일", time은 없으면 빼도 됩니다(종일)
 const EVENTS = [
   { date: "2026-11-07", time: "18:00", who: "가족", title: "(예시) 가족 외식" },
-  { date: "2026-11-12",                who: "준현", title: "(예시) 현장체험학습" },
-  { date: "2026-11-17",                who: "세현", title: "(예시) 영어 말하기 대회" },
+  { date: "2026-11-12", who: "준현", title: "(예시) 현장체험학습" },
+  { date: "2026-11-17", who: "세현", title: "(예시) 영어 말하기 대회" },
   { date: "2026-11-21", time: "11:00", who: "가족", title: "(예시) 할머니댁 방문" },
   { date: "2026-11-25", time: "16:00", who: "서현", title: "(예시) 학부모 상담" },
-  { date: "2026-12-24",                who: "가족", title: "(예시) 크리스마스 이브 가족여행" },
+  { date: "2026-12-24", who: "가족", title: "(예시) 크리스마스 이브 가족여행" },
 ];
 
 // 🚗 주간 픽업 스케줄 (매주 반복, 월~토)
@@ -50,10 +50,13 @@ const PICKUPS = [
   { day: "토", time: "18:00", who: "서현", place: "(예시) 독서실" },
 ];
 
-// 픽업이 없는 날 (방학, 재량휴업일 등)
+// 공휴일 말고도 픽업이 없는 날 (방학, 재량휴업일 등)
 const NO_PICKUP_DAYS = [
-  // "2026-12-25",
+  // "2026-12-31",
 ];
+
+// 공휴일에도 픽업을 표시하려면 false로 바꾸세요
+const SKIP_PICKUP_ON_HOLIDAYS = true;
 
 // 가족 메모
 const NOTES = [
@@ -61,13 +64,29 @@ const NOTES = [
 ];
 
 /* ===================== 여기 아래는 수정하지 않아도 됩니다 ===================== */
+
+// 🇰🇷 대한민국 공휴일 (대체공휴일 포함). 2028년 이후는 같은 형식으로 추가하세요.
+const HOLIDAYS = {
+  "2026-01-01":"신정","2026-02-16":"설날 연휴","2026-02-17":"설날","2026-02-18":"설날 연휴",
+  "2026-03-01":"삼일절","2026-03-02":"대체공휴일","2026-05-01":"노동절","2026-05-05":"어린이날",
+  "2026-05-24":"부처님오신날","2026-05-25":"대체공휴일","2026-06-03":"지방선거","2026-06-06":"현충일",
+  "2026-07-17":"제헌절","2026-08-15":"광복절","2026-08-17":"대체공휴일","2026-09-24":"추석 연휴",
+  "2026-09-25":"추석","2026-09-26":"추석 연휴","2026-10-03":"개천절","2026-10-05":"대체공휴일",
+  "2026-10-09":"한글날","2026-12-25":"성탄절",
+  "2027-01-01":"신정","2027-02-06":"설날 연휴","2027-02-07":"설날","2027-02-08":"설날 연휴",
+  "2027-02-09":"대체공휴일","2027-03-01":"삼일절","2027-05-01":"노동절","2027-05-03":"대체공휴일",
+  "2027-05-05":"어린이날","2027-05-13":"부처님오신날","2027-06-06":"현충일","2027-07-17":"제헌절",
+  "2027-07-19":"대체공휴일","2027-08-15":"광복절","2027-08-16":"대체공휴일","2027-09-14":"추석 연휴",
+  "2027-09-15":"추석","2027-09-16":"추석 연휴","2027-10-03":"개천절","2027-10-04":"대체공휴일",
+  "2027-10-09":"한글날","2027-10-11":"대체공휴일","2027-12-25":"성탄절","2027-12-27":"대체공휴일",
+};
 </script>
 
 <style>
-/* Layout: 냉장고 달력 — family-events month calendar on top; below, a live pickup strip and a Mon–Sat time-axis timetable. */
+/* Layout: 냉장고 달력 — Korean month calendar (일요일·공휴일 red) with an editable day panel; below, live pickup strip and Mon–Sat time-axis timetable. */
 :root{
   --paper:#F4F6F1; --card:#FFFFFF; --ink:#1D3127; --muted:#5D6E63; --line:#D8DFD5; --soft:#ECF0E8;
-  --pick:#F2B705; --pick-ink:#3A2C00; --pick-soft:#FFF4CC; --sun:#C2452F; --sat:#2F68A8;
+  --pick:#F2B705; --pick-ink:#3A2C00; --pick-soft:#FFF4CC; --sun:#D23F2A; --sat:#2F68A8; --hol-soft:#FCE9E5;
   --live:#D6402B; --ok:#2E8B57;
   --display:"Gaegu","IBM Plex Sans KR",cursive;
   --body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
@@ -76,7 +95,7 @@ const NOTES = [
 }
 @media (prefers-color-scheme: dark){:root{
   --paper:#121A15; --card:#1A251F; --ink:#E5EEE8; --muted:#9CAFA2; --line:#2B3930; --soft:#202D26;
-  --pick:#F5C334; --pick-ink:#2A2000; --pick-soft:#3A3212; --sun:#EE8571; --sat:#7DB0E8;
+  --pick:#F5C334; --pick-ink:#2A2000; --pick-soft:#3A3212; --sun:#F08A76; --sat:#7DB0E8; --hol-soft:#3A2420;
   --live:#F07462; --ok:#5CC08A; color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
@@ -85,7 +104,8 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);f
 .wrap>*{min-width:0}
 h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;line-height:1.15;text-wrap:balance}
 h1{font-size:clamp(36px,6.5vw,56px)} h2{font-size:30px} h3{font-size:24px}
-button{font:inherit;color:inherit;cursor:pointer}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
 :focus-visible{outline:3px solid var(--pick);outline-offset:2px;border-radius:6px}
 .muted{color:var(--muted)} .num{font-variant-numeric:tabular-nums}
 .row-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 14px;margin-bottom:12px}
@@ -98,7 +118,7 @@ header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between
 .dot{width:10px;height:10px;border-radius:50%;background:var(--mc);display:inline-block}
 
 /* calendar */
-.cal-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.cal-wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
 .cal{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;min-width:0}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
 .cal-nav .m{font-family:var(--display);font-size:30px}
@@ -107,28 +127,59 @@ header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between
 .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .dow{font-size:12px;font-weight:600;text-align:center;color:var(--muted);padding:4px 0}
 .dow.sun{color:var(--sun)} .dow.sat{color:var(--sat)}
-.cell{border:0;background:var(--soft);border-radius:9px;min-height:92px;padding:6px;text-align:left;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}
+.cell{border:0;background:var(--soft);border-radius:9px;min-height:96px;padding:6px;text-align:left;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}
 .cell.out{background:transparent;opacity:.4}
-.cell .d{font-size:13px;font-weight:600}
-.cell.sun .d{color:var(--sun)} .cell.sat .d{color:var(--sat)}
-.cell.today .d{background:var(--ink);color:var(--paper);border-radius:999px;padding:0 7px;align-self:flex-start}
+.cell .top{display:flex;align-items:baseline;gap:5px;min-width:0}
+.cell .d{font-size:13px;font-weight:600;flex:none}
+.cell .hn{font-size:10.5px;color:var(--sun);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cell.sun .d,.cell.hol .d{color:var(--sun)} .cell.sat:not(.hol) .d{color:var(--sat)}
+.cell.hol{background:var(--hol-soft)}
+.cell.today .d{background:var(--ink);color:var(--paper);border-radius:999px;padding:0 7px}
 .cell.sel{outline:2px solid var(--ink);outline-offset:-2px}
-.cell.has{background:color-mix(in srgb,var(--soft) 70%,var(--card))}
 .ev{font-size:12px;line-height:1.3;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--mc);color:#fff;font-weight:500}
 .dots{display:none;gap:3px;justify-content:center}
 .dots i{width:7px;height:7px;border-radius:50%;background:var(--mc)}
 
 .panel{display:grid;gap:14px}
 .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px}
+.box-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.hol-tag{font-size:12px;font-weight:600;color:var(--sun);background:var(--hol-soft);padding:2px 8px;border-radius:999px;justify-self:start}
 .plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.plist li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline;padding:8px 10px;border-radius:10px;background:var(--soft);border-left:4px solid var(--mc)}
+.plist li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--soft);border-left:4px solid var(--mc)}
 .plist .tm{font-weight:600;font-size:13px}
 .dday{font-weight:600;font-size:13px;color:var(--mc);min-width:42px}
 .who{font-weight:600;color:var(--mc)}
+.ebtn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:3px 10px;font-size:12.5px}
+.btn{border:0;border-radius:10px;padding:9px 14px;font-weight:600;background:var(--ink);color:var(--paper)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--sun);border:1px solid var(--sun)}
+.btn.add{background:var(--soft);color:var(--ink);border:1.5px dashed var(--line);width:100%}
+.btn[disabled]{opacity:.5;cursor:wait}
+
+/* edit form */
+.form{display:grid;gap:10px;padding:12px;border-radius:12px;background:var(--soft)}
+.field{display:grid;gap:4px}
+.field label{font-size:12.5px;color:var(--muted);font-weight:500}
+.field input,.field select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--card)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.check{display:flex;align-items:center;gap:6px;font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.actions .sp{flex:1}
+.msg{font-size:13px;min-height:1em}
+.msg.err{color:var(--sun)} .msg.ok{color:var(--ok)}
+
+/* github connect */
+.connect{display:grid;gap:10px;font-size:13.5px}
+.connect ol{margin:0;padding-left:20px;display:grid;gap:4px}
+.connect code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12.5px;overflow-wrap:anywhere}
+.conn-status{font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.linkbtn{border:0;background:none;padding:0;text-decoration:underline;color:var(--muted);font-size:12.5px}
 
 @media (max-width:900px){.cal-wrap{grid-template-columns:1fr}}
 @media (max-width:620px){
-  .cell{min-height:56px;align-items:center}
+  .cell{min-height:58px;align-items:center}
+  .cell .top{flex-direction:column;align-items:center;gap:0}
+  .cell .hn{font-size:9px;max-width:100%}
   .ev{display:none}.dots{display:flex}
   .cal{padding:10px}
 }
@@ -142,12 +193,11 @@ header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between
 .pulse{width:10px;height:10px;border-radius:50%;background:var(--live);display:inline-block}
 @media (prefers-reduced-motion:no-preference){.pulse{animation:pulse 1.6s infinite}}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--live) 60%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
-.next{font-size:15px}
 .next b{font-variant-numeric:tabular-nums}
 .live-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .lcard{border:1px solid var(--line);border-left:5px solid var(--mc);border-radius:12px;padding:12px 14px;display:grid;gap:4px;background:var(--paper)}
 .lcard .t{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.st{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;font-family:var(--body)}
+.st{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px}
 .st.wait{background:var(--soft);color:var(--muted)}
 .st.soon{background:var(--pick);color:var(--pick-ink)}
 .st.now{background:var(--live);color:#fff}
@@ -163,23 +213,22 @@ header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between
 /* time-axis timetable */
 .tt-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
 .tt{min-width:600px;display:grid;grid-template-columns:56px repeat(6,minmax(0,1fr))}
-.tt-h{position:sticky;top:0;background:var(--soft);padding:8px 6px;text-align:center;font-weight:600;font-size:14px;border-bottom:1px solid var(--line)}
+.tt-h{background:var(--soft);padding:8px 6px;text-align:center;font-weight:600;font-size:14px;border-bottom:1px solid var(--line)}
 .tt-h.today{background:var(--ink);color:var(--paper)}
-.tt-h.sat{color:var(--sat)} .tt-h.today.sat{color:var(--paper)}
-.tt-h small{display:block;font-weight:400;font-size:11.5px;opacity:.8}
+.tt-h.sat{color:var(--sat)} .tt-h.hol{color:var(--sun)} .tt-h.today.sat,.tt-h.today.hol{color:var(--paper)}
+.tt-h small{display:block;font-weight:400;font-size:11.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axis{position:relative;border-right:1px solid var(--line)}
 .axis span{position:absolute;right:8px;transform:translateY(-50%);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .col{position:relative;border-left:1px solid var(--line);
-  background-image:repeating-linear-gradient(to bottom,var(--line) 0 1px,transparent 1px var(--hour));background-position:0 12px;}
+  background-image:repeating-linear-gradient(to bottom,var(--line) 0 1px,transparent 1px var(--hour));background-position:0 12px}
 .col.today{background-color:color-mix(in srgb,var(--pick) 9%,transparent)}
+.col.hol{background-color:var(--hol-soft)}
 .blk{position:absolute;left:4px;right:4px;border-radius:7px;padding:3px 7px;background:var(--mc);color:#fff;font-size:12px;line-height:1.25;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
 .blk b{font-variant-numeric:tabular-nums;font-size:12.5px}
 .blk span{opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.blk.done{opacity:.45}
+.blk.done,.blk.off{opacity:.35}
 .nowline{position:absolute;left:0;right:0;height:2px;background:var(--live);z-index:3}
 .nowline::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--live)}
-.nowlabel{position:absolute;right:4px;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--live);font-variant-numeric:tabular-nums;z-index:3;background:var(--card);padding:0 2px}
-
 @media (max-width:620px){
   .tt{min-width:0;grid-template-columns:42px repeat(6,minmax(0,1fr))}
   .axis span{right:4px;font-size:10.5px}
@@ -188,9 +237,11 @@ header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between
   .blk b{font-size:11px;white-space:normal}
   .blk span{display:none}
 }
+
 .notes ul{list-style:none;padding:0;margin:10px 0 0}
 .notes li{padding:9px 0;border-bottom:1px solid var(--line)}
-footer{font-size:13px;color:var(--muted)}
+footer{font-size:13px;color:var(--muted);display:grid;gap:6px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:14px;z-index:20;max-width:calc(100vw - 32px)}
 </style>
 </head>
 <body>
@@ -205,7 +256,7 @@ footer{font-size:13px;color:var(--muted)}
   </header>
 
   <section aria-labelledby="calTitle">
-    <div class="row-head"><h2 id="calTitle">가족 행사 달력</h2><span class="muted" style="font-size:13px">날짜를 누르면 자세히 보여요</span></div>
+    <div class="row-head"><h2 id="calTitle">월간 스케줄</h2><span class="muted" style="font-size:13px">날짜를 누르면 일정을 추가·수정할 수 있어요</span></div>
     <div class="cal-wrap">
       <div class="cal">
         <div class="cal-nav">
@@ -220,14 +271,14 @@ footer{font-size:13px;color:var(--muted)}
         <div class="grid" id="grid" style="margin-top:4px"></div>
       </div>
       <div class="panel">
-        <div class="box" aria-live="polite"><h3 id="selTitle"></h3><ul class="plist" id="selList"></ul></div>
-        <div class="box"><h3>다가오는 행사</h3><ul class="plist" id="upcoming"></ul></div>
+        <div class="box" id="dayBox" aria-live="polite"></div>
+        <div class="box"><h3>다가오는 일정</h3><ul class="plist" id="upcoming"></ul></div>
       </div>
     </div>
   </section>
 
   <section aria-labelledby="pickTitle">
-    <div class="row-head"><h2 id="pickTitle">픽업</h2><span class="muted" style="font-size:13px">매주 반복 · 월~토</span></div>
+    <div class="row-head"><h2 id="pickTitle">픽업</h2><span class="muted" style="font-size:13px">매주 반복 · 월~토 · 공휴일은 쉼</span></div>
     <div class="pick-sec">
       <div class="live">
         <div class="live-head">
@@ -235,7 +286,7 @@ footer{font-size:13px;color:var(--muted)}
           <h3>실시간 픽업 현황</h3>
           <span class="clock" id="clock"></span>
         </div>
-        <div class="next" id="nextLine"></div>
+        <div id="nextLine"></div>
         <div class="live-list" id="liveList"></div>
       </div>
       <div>
@@ -247,8 +298,12 @@ footer{font-size:13px;color:var(--muted)}
 
   <section class="notes"><h2>가족 메모</h2><ul id="notes"></ul></section>
 
-  <footer>내용은 index.html 맨 위 "여기만 수정하세요" 부분을 고치면 됩니다. "픽업 완료" 표시는 각 휴대폰에만 저장돼요.</footer>
+  <footer>
+    <div>픽업 시간과 메모는 index.html 맨 위 "여기만 수정하세요" 부분에서 고칩니다. "픽업 완료" 표시는 각 휴대폰에만 저장돼요.</div>
+    <div class="conn-status" id="connStatus"></div>
+  </footer>
 </div>
+<div class="toast" id="toast" hidden></div>
 
 <script>
 const DOW=["일","월","화","수","목","금","토"], PDAYS=["월","화","수","목","금","토"];
@@ -259,19 +314,24 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const mins=t=>{const [h,m]=String(t).split(":").map(Number);return h*60+(m||0)};
 const mem=n=>MEMBERS.find(m=>m.name===n)||{name:n,color:"#888",grade:""};
 const byTime=(a,b)=>mins(a.time||"0:00")-mins(b.time||"0:00");
+const parseISO=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,4000)}
 
 const today=new Date(); today.setHours(0,0,0,0);
 const todayISO=iso(today);
 let view=new Date(today.getFullYear(),today.getMonth(),1), selected=todayISO;
+let events=EVENTS.slice();
+// GitHub Pages can serve a cached page for a few minutes after a save; show this device's latest save meanwhile
+(()=>{const o=store.get("eventsOverride"); if(o&&Date.now()-o.savedAt<15*60*1000) events=o.events; else store.del("eventsOverride")})();
 
 $("title").textContent=FAMILY+" 가족 스케줄"; document.title=FAMILY+" 가족 스케줄";
-$("todayLabel").textContent=`${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 ${DOW[today.getDay()]}요일`;
+$("todayLabel").textContent=`${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 ${DOW[today.getDay()]}요일${HOLIDAYS[todayISO]?" · "+HOLIDAYS[todayISO]:""}`;
 $("legend").innerHTML=MEMBERS.map(m=>`<span style="--mc:${esc(m.color)}"><i class="dot"></i>${esc(m.name)}${m.grade?` <small>${esc(m.grade)}</small>`:""}</span>`).join("");
 $("notes").innerHTML=NOTES.map(n=>`<li>${esc(n)}</li>`).join("")||'<li class="muted">메모 없음</li>';
 
-/* ---------- calendar (family events only) ---------- */
-const eventsOn=key=>EVENTS.filter(e=>e.date===key).sort(byTime);
-function parseISO(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
+/* ================= 월간 스케줄 ================= */
+const eventsOn=key=>events.filter(e=>e.date===key).sort(byTime);
 
 function renderCalendar(){
   $("monthLabel").textContent=`${view.getFullYear()}년 ${view.getMonth()+1}월`;
@@ -281,68 +341,216 @@ function renderCalendar(){
   for(let i=0;i<42;i++){
     const d=new Date(start); d.setDate(start.getDate()+i);
     if(i===35&&d.getMonth()!==view.getMonth()) break;
-    const key=iso(d), ev=eventsOn(key);
-    const cls=["cell",d.getMonth()!==view.getMonth()&&"out",d.getDay()===0&&"sun",d.getDay()===6&&"sat",key===todayISO&&"today",key===selected&&"sel",ev.length&&"has"].filter(Boolean).join(" ");
-    html+=`<button class="${cls}" data-date="${key}" aria-label="${d.getMonth()+1}월 ${d.getDate()}일${ev.length?`, 행사 ${ev.length}건`:""}">
-      <span class="d num">${d.getDate()}</span>
+    const key=iso(d), ev=eventsOn(key), hol=HOLIDAYS[key];
+    const cls=["cell",d.getMonth()!==view.getMonth()&&"out",d.getDay()===0&&"sun",d.getDay()===6&&"sat",hol&&"hol",key===todayISO&&"today",key===selected&&"sel"].filter(Boolean).join(" ");
+    html+=`<button class="${cls}" data-date="${key}" aria-label="${d.getMonth()+1}월 ${d.getDate()}일${hol?" "+hol:""}${ev.length?`, 일정 ${ev.length}건`:""}">
+      <span class="top"><span class="d num">${d.getDate()}</span>${hol?`<span class="hn">${esc(hol)}</span>`:""}</span>
       ${ev.map(e=>`<span class="ev" style="--mc:${esc(mem(e.who).color)}">${esc(e.title.replace("(예시) ",""))}</span>`).join("")}
       <span class="dots">${ev.map(e=>`<i style="--mc:${esc(mem(e.who).color)}"></i>`).join("")}</span>
     </button>`;
   }
   $("grid").innerHTML=html;
-  const sd=parseISO(selected), ev=eventsOn(selected);
-  $("selTitle").textContent=`${sd.getMonth()+1}월 ${sd.getDate()}일 ${DOW[sd.getDay()]}요일${selected===todayISO?" · 오늘":""}`;
-  $("selList").innerHTML=ev.length?ev.map(e=>`<li style="--mc:${esc(mem(e.who).color)}"><span class="tm num">${esc(e.time||"종일")}</span><span><span class="who">${esc(e.who)}</span> ${esc(e.title)}</span></li>`).join("")
-    :`<li style="grid-template-columns:1fr;background:transparent;border:0;padding:0" class="muted">등록된 행사가 없어요.</li>`;
+  renderDay();
+  renderUpcoming();
 }
+
+let editing=null; // null | {mode:"add"} | {mode:"edit", orig}
+function renderDay(){
+  const sd=parseISO(selected), ev=eventsOn(selected), hol=HOLIDAYS[selected];
+  let h=`<div class="box-head"><h3>${sd.getMonth()+1}월 ${sd.getDate()}일 ${DOW[sd.getDay()]}요일${selected===todayISO?" · 오늘":""}</h3></div>`;
+  if(hol) h+=`<span class="hol-tag">공휴일 · ${esc(hol)}</span>`;
+  h+=`<ul class="plist">${ev.length?ev.map((e,i)=>`<li style="--mc:${esc(mem(e.who).color)}">
+      <span class="tm num">${esc(e.time||"종일")}</span>
+      <span><span class="who">${esc(e.who)}</span> ${esc(e.title)}</span>
+      <button class="ebtn" data-edit="${i}">수정</button></li>`).join("")
+    :`<li style="grid-template-columns:1fr;background:transparent;border:0;padding:0" class="muted">등록된 일정이 없어요.</li>`}</ul>`;
+  if(editing) h+=formHTML(); else h+=`<button class="btn add" id="addBtn">+ 이 날 일정 추가</button>`;
+  $("dayBox").innerHTML=h;
+  if(editing) bindForm();
+}
+
+function formHTML(){
+  const o=editing.mode==="edit"?editing.orig:{who:MEMBERS[0].name,time:"",title:""};
+  const conn=getConn();
+  return `<form class="form" id="evForm">
+    <strong>${editing.mode==="edit"?"일정 수정":"새 일정"}</strong>
+    <div class="field"><label for="fTitle">내용</label><input id="fTitle" required maxlength="60" value="${esc(o.title)}" placeholder="예: 학교 축제"></div>
+    <div class="row2">
+      <div class="field"><label for="fWho">누구</label><select id="fWho">${MEMBERS.map(m=>`<option${m.name===o.who?" selected":""}>${esc(m.name)}</option>`).join("")}</select></div>
+      <div class="field"><label for="fDate">날짜</label><input id="fDate" type="date" required value="${esc(editing.mode==="edit"?o.date:selected)}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="fTime">시간</label><input id="fTime" type="time" value="${esc(o.time||"")}" ${o.time?"":"disabled"}></div>
+      <label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="fAllDay" ${o.time?"":"checked"}> 종일</label>
+    </div>
+    ${conn?"":connectHTML()}
+    <div class="msg" id="fMsg"></div>
+    <div class="actions">
+      ${editing.mode==="edit"?`<button type="button" class="btn danger" id="fDel">삭제</button>`:""}
+      <span class="sp"></span>
+      <button type="button" class="btn ghost" id="fCancel">취소</button>
+      <button type="submit" class="btn" id="fSave">저장</button>
+    </div>
+  </form>`;
+}
+
+function bindForm(){
+  $("fAllDay").onchange=e=>{$("fTime").disabled=e.target.checked;if(!e.target.checked&&!$("fTime").value)$("fTime").value="09:00"};
+  $("fCancel").onclick=()=>{editing=null;renderDay()};
+  if($("fDel")) $("fDel").onclick=async()=>{
+    const b=$("fDel"); if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="한 번 더 누르면 삭제";return}
+    await commit({type:"delete",orig:editing.orig});
+  };
+  $("evForm").onsubmit=async e=>{
+    e.preventDefault();
+    if(!getConn()&&!readConnectForm()) return;
+    const next={date:$("fDate").value,who:$("fWho").value,title:$("fTitle").value.trim()};
+    if(!$("fAllDay").checked&&$("fTime").value) next.time=$("fTime").value;
+    if(!next.title||!next.date){msg("내용과 날짜를 적어주세요.","err");return}
+    await commit(editing.mode==="edit"?{type:"update",orig:editing.orig,next}:{type:"add",next});
+  };
+  $("fTitle").focus();
+}
+function msg(t,k){const m=$("fMsg");if(m){m.textContent=t;m.className="msg "+(k||"")}}
+
 function renderUpcoming(){
-  const up=EVENTS.filter(e=>e.date>=todayISO).sort((a,b)=>a.date.localeCompare(b.date)||byTime(a,b)).slice(0,5);
+  const up=events.filter(e=>e.date>=todayISO).sort((a,b)=>a.date.localeCompare(b.date)||byTime(a,b)).slice(0,5);
   $("upcoming").innerHTML=up.length?up.map(e=>{const d=parseISO(e.date),n=Math.round((d-today)/864e5);
-    return `<li style="--mc:${esc(mem(e.who).color)}"><span class="dday num">${n===0?"D-DAY":"D-"+n}</span><span><span class="who">${esc(e.who)}</span> ${esc(e.title)}<br><span class="muted num" style="font-size:12.5px">${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]})${e.time?" "+esc(e.time):""}</span></span></li>`}).join("")
-    :`<li style="grid-template-columns:1fr;background:transparent;border:0;padding:0" class="muted">예정된 행사가 없어요.</li>`;
+    return `<li style="--mc:${esc(mem(e.who).color)};grid-template-columns:auto 1fr"><span class="dday num">${n===0?"D-DAY":"D-"+n}</span><span><span class="who">${esc(e.who)}</span> ${esc(e.title)}<br><span class="muted num" style="font-size:12.5px">${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]})${e.time?" "+esc(e.time):""}</span></span></li>`}).join("")
+    :`<li style="grid-template-columns:1fr;background:transparent;border:0;padding:0" class="muted">예정된 일정이 없어요.</li>`;
 }
 
-/* ---------- live pickup ---------- */
-function loadDone(){try{return JSON.parse(localStorage.getItem("pickupDone")||"{}")}catch(e){return {}}}
-function saveDone(v){try{localStorage.setItem("pickupDone",JSON.stringify(v))}catch(e){}}
-let done=loadDone();
-const noPick=new Set(NO_PICKUP_DAYS);
-const pickupsFor=d=>noPick.has(iso(d))?[]:PICKUPS.filter(p=>p.day===DOW[d.getDay()]).sort(byTime);
-const doneKey=p=>`${todayISO}|${p.time}|${p.who}`;
+/* ================= GitHub 저장 ================= */
+// 저장소 위치는 주소(아이디.github.io/저장소)에서 자동으로 알아냅니다.
+function detectRepo(){
+  const h=location.hostname, m=h.match(/^([^.]+)\.github\.io$/i);
+  if(!m) return {owner:"",repo:""};
+  const seg=location.pathname.split("/").filter(Boolean)[0];
+  return {owner:m[1],repo:seg&&!seg.endsWith(".html")?seg:h};
+}
+function getConn(){const c=store.get("ghConn");return c&&c.token&&c.owner&&c.repo?c:null}
+function connectHTML(){
+  const d=detectRepo();
+  return `<div class="connect">
+    <strong>처음 한 번: 이 기기를 GitHub에 연결</strong>
+    <ol>
+      <li>GitHub → Settings → Developer settings → <b>Fine-grained tokens</b> → Generate new token</li>
+      <li>Repository access: <b>이 저장소만</b> 선택, Permissions → <b>Contents: Read and write</b></li>
+      <li>만들어진 토큰(github_pat_…)을 아래에 붙여넣기</li>
+    </ol>
+    <div class="row2">
+      <div class="field"><label for="cOwner">소유주</label><input id="cOwner" value="${esc(d.owner)}" placeholder="아이디 또는 조직"></div>
+      <div class="field"><label for="cRepo">저장소</label><input id="cRepo" value="${esc(d.repo)}" placeholder="family-home"></div>
+    </div>
+    <div class="field"><label for="cToken">토큰</label><input id="cToken" type="password" autocomplete="off" placeholder="github_pat_..."></div>
+    <span class="muted" style="font-size:12px">토큰은 이 기기에만 저장되고, 이 저장소의 index.html을 고치는 데만 씁니다.</span>
+  </div>`;
+}
+function readConnectForm(){
+  const c={owner:$("cOwner").value.trim(),repo:$("cRepo").value.trim(),token:$("cToken").value.trim(),branch:"main"};
+  if(!c.owner||!c.repo||!c.token){msg("소유주, 저장소, 토큰을 모두 적어주세요.","err");return null}
+  store.set("ghConn",c); renderConn(); return c;
+}
+function renderConn(){
+  const c=getConn();
+  $("connStatus").innerHTML=c?`달력 저장: <b>${esc(c.owner)}/${esc(c.repo)}</b> 연결됨 <button class="linkbtn" id="disc">연결 해제</button>`
+    :`달력 저장: 이 기기는 아직 GitHub에 연결되지 않았어요 (일정 저장할 때 연결)`;
+  if($("disc")) $("disc").onclick=()=>{store.del("ghConn");renderConn();toast("이 기기의 GitHub 연결을 해제했어요.")};
+}
 
+const b64dec=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,"")),c=>c.charCodeAt(0)));
+function b64enc(str){const bytes=new TextEncoder().encode(str);let bin="";for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return btoa(bin)}
+const EV_RE=/const EVENTS = \[[\s\S]*?\n\];/;
+const same=(a,b)=>a.date===b.date&&(a.time||"")===(b.time||"")&&a.who===b.who&&a.title===b.title;
+function serialize(list){
+  const s=list.slice().sort((a,b)=>a.date.localeCompare(b.date)||byTime(a,b));
+  return "const EVENTS = [\n"+s.map(e=>`  { date: ${JSON.stringify(e.date)}, ${e.time?`time: ${JSON.stringify(e.time)}, `:""}who: ${JSON.stringify(e.who)}, title: ${JSON.stringify(e.title)} },`).join("\n")+"\n];";
+}
+
+async function gh(conn,method,body){
+  const url=`https://api.github.com/repos/${encodeURIComponent(conn.owner)}/${encodeURIComponent(conn.repo)}/contents/index.html`+(method==="GET"?`?ref=${encodeURIComponent(conn.branch||"main")}`:"");
+  const r=await fetch(url,{method,cache:"no-store",headers:{Authorization:`Bearer ${conn.token}`,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"},body:body?JSON.stringify(body):undefined});
+  if(!r.ok){const e=new Error("http");e.status=r.status;throw e}
+  return r.json();
+}
+
+async function commit(change){
+  const conn=getConn(); if(!conn) return;
+  const save=$("fSave"); if(save){save.disabled=true;save.textContent="저장 중…"}
+  msg("GitHub에 저장하는 중…");
+  try{
+    for(let attempt=0;attempt<2;attempt++){
+      const file=await gh(conn,"GET");
+      const src=b64dec(file.content);
+      const m=src.match(EV_RE);
+      if(!m) throw Object.assign(new Error("format"),{status:"format"});
+      const list=new Function("return "+m[0].replace(/^const EVENTS = /,"").replace(/;$/,""))();
+      if(change.type!=="add"){
+        const i=list.findIndex(e=>same(e,change.orig));
+        if(i<0) throw Object.assign(new Error("gone"),{status:"gone"});
+        if(change.type==="delete") list.splice(i,1); else list[i]=change.next;
+      } else list.push(change.next);
+      const out=src.replace(EV_RE,serialize(list));
+      const label=change.type==="add"?"추가":change.type==="delete"?"삭제":"수정";
+      const t=(change.next||change.orig);
+      try{
+        await gh(conn,"PUT",{message:`월간 스케줄 ${label}: ${t.date} ${t.title}`,content:b64enc(out),sha:file.sha,branch:conn.branch||"main"});
+        events=list; store.set("eventsOverride",{savedAt:Date.now(),events:list});
+        editing=null;
+        if(change.next&&change.next.date!==selected){selected=change.next.date;const d=parseISO(selected);view=new Date(d.getFullYear(),d.getMonth(),1)}
+        renderCalendar();
+        toast(`${label}했어요. 다른 기기에는 1~2분 뒤 보여요.`);
+        return;
+      }catch(e){ if(e.status===409&&attempt===0) continue; throw e; }
+    }
+  }catch(e){
+    if(save){save.disabled=false;save.textContent="저장"}
+    const s=e.status;
+    if(s===401){store.del("ghConn");renderConn();msg("토큰이 맞지 않거나 만료됐어요. 새 토큰을 넣고 다시 저장해주세요.","err");editing&&renderDay();}
+    else if(s===403||s===404) msg("이 저장소에 쓸 권한이 없어요. 소유주·저장소 이름과 토큰 권한(Contents: Read and write)을 확인해주세요.","err");
+    else if(s==="gone") msg("다른 기기에서 이 일정이 이미 바뀌었어요. 새로고침한 뒤 다시 해주세요.","err");
+    else if(s==="format") msg("index.html의 EVENTS 부분 형식이 바뀌어 자동 저장을 할 수 없어요.","err");
+    else msg("저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러주세요.","err");
+  }
+}
+
+/* ================= 실시간 픽업 ================= */
+let done=store.get("pickupDone")||{};
+const noPick=new Set(NO_PICKUP_DAYS);
+const offDay=d=>{const k=iso(d);return noPick.has(k)||(SKIP_PICKUP_ON_HOLIDAYS&&!!HOLIDAYS[k])};
+const pickupsFor=d=>offDay(d)?[]:PICKUPS.filter(p=>p.day===DOW[d.getDay()]).sort(byTime);
+const doneKey=p=>`${todayISO}|${p.time}|${p.who}`;
+function fmtDur(m){const h=Math.floor(m/60),r=m%60;return h?`${h}시간${r?" "+r+"분":""}`:`${r}분`}
 function status(p,nowM){
   if(done[doneKey(p)]) return ["done","완료"];
-  const t=mins(p.time), diff=t-nowM;
+  const diff=mins(p.time)-nowM;
   if(diff>30) return ["wait",`${fmtDur(diff)} 후`];
   if(diff>0) return ["soon",`${diff}분 후 · 곧 출발`];
   if(diff>-30) return ["now","픽업 시간"];
   return ["done","시간 지남"];
 }
-function fmtDur(m){const h=Math.floor(m/60),r=m%60;return h?`${h}시간${r?" "+r+"분":""}`:`${r}분`}
-
 function nextPickup(now){
   const nowM=now.getHours()*60+now.getMinutes();
-  for(let i=0;i<8;i++){
+  for(let i=0;i<14;i++){
     const d=new Date(today); d.setDate(today.getDate()+i);
     const list=pickupsFor(d).filter(p=>i>0||(mins(p.time)>nowM&&!done[doneKey(p)]));
     if(list.length) return {p:list[0],d,i};
   }
   return null;
 }
-
 function renderLive(){
   const now=new Date(), nowM=now.getHours()*60+now.getMinutes();
   $("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const list=pickupsFor(today);
+  const list=pickupsFor(today), hol=HOLIDAYS[todayISO];
   $("liveList").innerHTML=list.length?list.map(p=>{
     const m=mem(p.who), [k,label]=status(p,nowM), isDone=!!done[doneKey(p)];
     return `<article class="lcard is-${k}${isDone?" is-done":""}" style="--mc:${esc(m.color)}">
       <div class="t"><span class="ltime">${esc(p.time)}</span><span class="st ${k}">${esc(label)}</span></div>
       <div><span class="who">${esc(p.who)}</span> · ${esc(p.place)}</div>
       <button class="chk" data-done="${esc(doneKey(p))}">${isDone?"✓ 픽업 완료":"픽업 완료 표시"}</button>
-    </article>`}).join(""):`<div class="empty">오늘은 픽업이 없어요.</div>`;
+    </article>`}).join(""):`<div class="empty">${hol&&SKIP_PICKUP_ON_HOLIDAYS?`오늘은 ${esc(hol)}이라 픽업이 없어요.`:"오늘은 픽업이 없어요."}</div>`;
   const n=nextPickup(now);
-  if(!n){$("nextLine").innerHTML='<span class="muted">예정된 픽업이 없어요.</span>';}
+  if(!n) $("nextLine").innerHTML='<span class="muted">예정된 픽업이 없어요.</span>';
   else{
     const when=n.i===0?`오늘 <b>${esc(n.p.time)}</b> (${fmtDur(mins(n.p.time)-nowM)} 후)`
       :`${n.i===1?"내일":`${n.d.getMonth()+1}/${n.d.getDate()}`} (${DOW[n.d.getDay()]}) <b>${esc(n.p.time)}</b>`;
@@ -350,49 +558,55 @@ function renderLive(){
   }
   renderTimetable(now);
 }
-
-/* ---------- time-axis timetable ---------- */
 function renderTimetable(now){
   const H=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hour"))||58;
+  if(!PICKUPS.length){$("tt").innerHTML='<div class="empty" style="padding:14px">등록된 픽업이 없어요.</div>';return}
   const all=PICKUPS.map(p=>mins(p.time));
-  const startH=Math.max(0,Math.floor(Math.min(...all)/60)-0), endH=Math.min(24,Math.ceil((Math.max(...all)+40)/60));
+  const startH=Math.floor(Math.min(...all)/60), endH=Math.min(24,Math.ceil((Math.max(...all)+40)/60));
   const PADT=12, hours=endH-startH, height=hours*H+PADT*2;
   const top=m=>PADT+(m-startH*60)/60*H;
   const tdw=DOW[today.getDay()];
-  // week dates (Mon of this week; Sunday shows next week)
   const mon=new Date(today); mon.setDate(today.getDate()+(today.getDay()===0?1:1-today.getDay()));
+  const dates=PDAYS.map((d,i)=>{const dt=new Date(mon);dt.setDate(mon.getDate()+i);return dt});
   let h=`<div class="tt-h" style="border-right:1px solid var(--line)"></div>`;
-  PDAYS.forEach((d,i)=>{const dt=new Date(mon);dt.setDate(mon.getDate()+i);
-    h+=`<div class="tt-h${d===tdw?" today":""}${d==="토"?" sat":""}">${d}<small class="num">${dt.getMonth()+1}/${dt.getDate()}</small></div>`});
+  PDAYS.forEach((d,i)=>{const dt=dates[i],hol=HOLIDAYS[iso(dt)];
+    h+=`<div class="tt-h${d===tdw?" today":""}${d==="토"?" sat":""}${hol?" hol":""}">${d}<small class="num">${hol?esc(hol):`${dt.getMonth()+1}/${dt.getDate()}`}</small></div>`});
   let axis=`<div class="axis" style="height:${height}px">`;
   for(let k=0;k<=hours;k++) axis+=`<span style="top:${PADT+k*H}px">${pad(startH+k)}:00</span>`;
   axis+="</div>";
   const nowM=now.getHours()*60+now.getMinutes();
   let cols="";
-  PDAYS.forEach(d=>{
-    const isToday=d===tdw;
+  PDAYS.forEach((d,i)=>{
+    const isToday=d===tdw, off=offDay(dates[i]);
     const items=PICKUPS.filter(p=>p.day===d).sort(byTime);
-    cols+=`<div class="col${isToday?" today":""}" style="height:${height}px">`+
+    cols+=`<div class="col${isToday?" today":""}${HOLIDAYS[iso(dates[i])]?" hol":""}" style="height:${height}px">`+
       items.map(p=>{const m=mem(p.who),dn=isToday&&done[doneKey(p)];
-        return `<div class="blk${dn?" done":""}" style="--mc:${esc(m.color)};top:${top(mins(p.time))+1}px;height:${Math.max(H*0.62,34)}px" title="${esc(p.time+" "+p.who+" "+p.place)}"><b>${esc(p.time)} ${esc(p.who)}</b><span>${esc(p.place)}</span></div>`}).join("")+
+        return `<div class="blk${dn?" done":""}${off?" off":""}" style="--mc:${esc(m.color)};top:${top(mins(p.time))+1}px;height:${Math.max(H*0.62,34)}px" title="${esc(p.time+" "+p.who+" "+p.place)}"><b>${esc(p.time)} ${esc(p.who)}</b><span>${esc(p.place)}</span></div>`}).join("")+
       (isToday&&nowM>=startH*60&&nowM<=endH*60?`<div class="nowline" style="top:${top(nowM)}px"></div>`:"")+
       `</div>`;
   });
   $("tt").innerHTML=h+axis+cols;
 }
 
-/* ---------- events ---------- */
+/* ================= 이벤트 ================= */
 document.addEventListener("click",e=>{
   const c=e.target.closest("[data-date]");
-  if(c){selected=c.dataset.date;const d=parseISO(selected);if(d.getMonth()!==view.getMonth()||d.getFullYear()!==view.getFullYear()) view=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();return;}
+  if(c){selected=c.dataset.date;editing=null;const d=parseISO(selected);
+    if(d.getMonth()!==view.getMonth()||d.getFullYear()!==view.getFullYear()) view=new Date(d.getFullYear(),d.getMonth(),1);
+    renderCalendar();
+    if(window.innerWidth<900) $("dayBox").scrollIntoView({behavior:"smooth",block:"start"});
+    return;}
+  if(e.target.closest("#addBtn")){editing={mode:"add"};renderDay();return}
+  const ed=e.target.closest("[data-edit]");
+  if(ed){editing={mode:"edit",orig:eventsOn(selected)[+ed.dataset.edit]};renderDay();return}
   const b=e.target.closest("[data-done]");
-  if(b){const k=b.dataset.done; if(done[k]) delete done[k]; else done[k]=true; saveDone(done); renderLive();}
+  if(b){const k=b.dataset.done; if(done[k]) delete done[k]; else done[k]=true; store.set("pickupDone",done); renderLive();}
 });
 $("prev").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderCalendar()};
 $("next").onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCalendar()};
-$("thisMonth").onclick=()=>{view=new Date(today.getFullYear(),today.getMonth(),1);selected=todayISO;renderCalendar()};
+$("thisMonth").onclick=()=>{view=new Date(today.getFullYear(),today.getMonth(),1);selected=todayISO;editing=null;renderCalendar()};
 
-renderCalendar(); renderUpcoming(); renderLive();
+renderConn(); renderCalendar(); renderLive();
 setInterval(()=>{ if(iso(new Date())!==todayISO) location.reload(); else renderLive(); },30000);
 </script>
 </body>
