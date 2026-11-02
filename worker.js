@@ -1,6 +1,3 @@
-// Cloudflare Worker — 가족 스케줄 저장 기능 (수정하지 않아도 됩니다)
-// 홈페이지 파일은 public/index.html, 저장 공간은 wrangler.jsonc의 SCHEDULE(KV)입니다.
-
 const KEY = "state";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^\d{2}:\d{2}$/;
@@ -36,16 +33,13 @@ async function onRequestPost({ request, env }) {
   if (!env.SCHEDULE) return json({ error: "no_kv" }, 500);
   if (env.FAMILY_CODE && request.headers.get("x-family-code") !== env.FAMILY_CODE)
     return json({ error: "code" }, 401);
-
   let b;
   try { b = await request.json(); } catch { return json({ error: "bad" }, 400); }
-
   const s = await load(env);
   let events = Array.isArray(s.events)
     ? s.events
     : (Array.isArray(b.seed) ? b.seed.map(clean).filter(Boolean) : []);
   let done = s.done || {};
-
   if (b.op === "add") {
     const n = clean(b.next); if (!n) return json({ error: "bad" }, 400);
     if (events.length >= 2000) return json({ error: "full" }, 400);
@@ -61,11 +55,10 @@ async function onRequestPost({ request, env }) {
     if (!DATE.test(date) || !key) return json({ error: "bad" }, 400);
     const day = { ...(done[date] || {}) };
     if (b.value) day[key] = true; else delete day[key];
-    done = { [date]: day }; // 오늘 것만 보관
+    done = { [date]: day };
   } else {
     return json({ error: "bad" }, 400);
   }
-
   events.sort((a, b) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""));
   const next = { events, done };
   await env.SCHEDULE.put(KEY, JSON.stringify(next));
