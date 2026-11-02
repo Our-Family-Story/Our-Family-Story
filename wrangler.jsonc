@@ -1,5 +1,5 @@
 {
-  "name": "https://our-family-story.chogak1449.workers.dev",
+  "name": "our-family-story",
   "main": "src/worker.js",
   "compatibility_date": "2025-06-01",
   "assets": {
