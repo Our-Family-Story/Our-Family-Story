@@ -7,5 +7,8 @@
       "binding": "SCHEDULE",
       "id": "115a73bebed742a68c8d1149f9f4c00a"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["0 13 * * *"]
+  }
 }
